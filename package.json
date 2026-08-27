@@ -1,0 +1,33 @@
+{
+  "name": "paseo-plugin-mermaid",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Render Mermaid diagrams inside the Paseo chat timeline",
+  "license": "MIT",
+  "author": "dutchakdev",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dutchakdev/paseo-plugin-mermaid.git"
+  },
+  "keywords": [
+    "paseo",
+    "paseo-plugin",
+    "mermaid",
+    "diagrams"
+  ],
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@getpaseo/client": "^0.4.0",
+    "@getpaseo/protocol": "^0.6.1",
+    "@tanstack/react-query": "^5.90.11",
+    "@types/react": "~19.2.0",
+    "react": "19.1.0",
+    "react-native": "0.81.5",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.11",
+    "zod": "^4.4.3"
+  }
+}
