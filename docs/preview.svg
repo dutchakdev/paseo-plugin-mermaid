@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="647" height="619" viewBox="0 0 647 619">
+<rect width="647" height="619" fill="#1a1d1f" rx="12"/>
+<text x="24" y="28" fill="#9aa1a6" font-size="11" font-family="system-ui, sans-serif" letter-spacing="1">FLOWCHART</text>
+<text x="391" y="28" fill="#9aa1a6" font-size="11" font-family="system-ui, sans-serif" letter-spacing="1">SEQUENCE</text>
+<g transform="translate(24, 50)">
+<rect x="162.75" y="37" width="1.5" height="28" fill="#9aa1a6" opacity="1"/><rect x="163.5" y="65" width="1.5" height="1.5" fill="#9aa1a6" opacity="1"/><rect x="162.75" y="65" width="1.5" height="28" fill="#9aa1a6" opacity="1"/><polygon points="158.5,88 168.5,88 163.5,93" fill="#9aa1a6"/>
+<rect x="162.75" y="146" width="1.5" height="28" fill="#9aa1a6" opacity="1"/><rect x="71" y="174" width="92.5" height="1.5" fill="#9aa1a6" opacity="1"/><rect x="70.25" y="174" width="1.5" height="28" fill="#9aa1a6" opacity="1"/><polygon points="66,197 76,197 71,202" fill="#9aa1a6"/><rect x="91.25" y="166" width="52" height="16" fill="#1a1d1f"/><text x="117.25" y="178" fill="#9aa1a6" font-size="10" font-family="system-ui, sans-serif" text-anchor="middle">no</text>
+<rect x="162.75" y="146" width="1.5" height="28" fill="#9aa1a6" opacity="1"/><rect x="163.5" y="174" width="82" height="1.5" fill="#9aa1a6" opacity="1"/><rect x="244.75" y="174" width="1.5" height="28" fill="#9aa1a6" opacity="1"/><polygon points="240.5,197 250.5,197 245.5,202" fill="#9aa1a6"/><rect x="178.5" y="166" width="52" height="16" fill="#1a1d1f"/><text x="204.5" y="178" fill="#9aa1a6" font-size="10" font-family="system-ui, sans-serif" text-anchor="middle">yes</text>
+<rect x="244.75" y="239" width="1.5" height="28" fill="#9aa1a6" opacity="1"/><rect x="89" y="267" width="156.5" height="1.5" fill="#9aa1a6" opacity="1"/><rect x="88.25" y="267" width="1.5" height="28" fill="#9aa1a6" opacity="1"/><polygon points="84,290 94,290 89,295" fill="#9aa1a6"/>
+<rect x="244.75" y="239" width="1.5" height="28" fill="#9aa1a6" opacity="1"/><rect x="206.5" y="267" width="39" height="1.5" fill="#9aa1a6" opacity="1"/><rect x="205.75" y="267" width="1.5" height="28" fill="#9aa1a6" opacity="1"/><polygon points="201.5,290 211.5,290 206.5,295" fill="#9aa1a6"/>
+<rect x="88.25" y="332" width="1.5" height="28" fill="#9aa1a6" opacity="1"/><rect x="89" y="360" width="74.5" height="1.5" fill="#9aa1a6" opacity="1"/><rect x="162.75" y="360" width="1.5" height="28" fill="#9aa1a6" opacity="1"/><polygon points="158.5,383 168.5,383 163.5,388" fill="#9aa1a6"/>
+<rect x="205.75" y="332" width="1.5" height="74.5" fill="#9aa1a6" opacity="1"/><rect x="163.5" y="406.5" width="43" height="1.5" fill="#9aa1a6" opacity="1"/><rect x="162.75" y="406.5" width="1.5" height="74.5" fill="#9aa1a6" opacity="1"/><polygon points="158.5,476 168.5,476 163.5,481" fill="#9aa1a6"/>
+<rect x="162.75" y="425" width="1.5" height="28" fill="#9aa1a6" opacity="1"/><rect x="163.5" y="453" width="1.5" height="1.5" fill="#9aa1a6" opacity="1"/><rect x="162.75" y="453" width="1.5" height="28" fill="#9aa1a6" opacity="1"/><polygon points="158.5,476 168.5,476 163.5,481" fill="#9aa1a6"/>
+<rect x="96" y="0" width="135" height="37" rx="18.5" fill="#131516" stroke="#3987e5" stroke-width="1"/><text x="163.5" y="22.5" fill="#e8eaec" font-size="12" font-family="system-ui, sans-serif" text-anchor="middle">Message arrives</text>
+<rect x="144.42000000000002" y="100.42" width="38.16" height="38.16" fill="#131516" stroke="#3987e5" stroke-width="1" transform="rotate(45 163.5 119.5)"/><text x="163.5" y="123.5" fill="#e8eaec" font-size="12" font-family="system-ui, sans-serif" text-anchor="middle">Has mermaid?</text>
+<rect x="0" y="202" width="142" height="37" rx="4" fill="#131516" stroke="#3987e5" stroke-width="1"/><text x="71" y="224.5" fill="#e8eaec" font-size="12" font-family="system-ui, sans-serif" text-anchor="middle">Paseo renders it</text>
+<rect x="164" y="202" width="163" height="37" rx="4" fill="#131516" stroke="#3987e5" stroke-width="1"/><line x1="169" y1="202" x2="169" y2="239" stroke="#3987e5"/><line x1="322" y1="202" x2="322" y2="239" stroke="#3987e5"/><text x="245.5" y="224.5" fill="#e8eaec" font-size="12" font-family="system-ui, sans-serif" text-anchor="middle">Split into segments</text>
+<rect x="57" y="295" width="64" height="37" rx="12" fill="#131516" stroke="#3987e5" stroke-width="1"/><text x="89" y="317.5" fill="#e8eaec" font-size="12" font-family="system-ui, sans-serif" text-anchor="middle">Prose</text>
+<rect x="143" y="295" width="127" height="37" rx="12" fill="#131516" stroke="#3987e5" stroke-width="1"/><text x="206.5" y="317.5" fill="#e8eaec" font-size="12" font-family="system-ui, sans-serif" text-anchor="middle">Diagram source</text>
+<rect x="92.5" y="388" width="142" height="37" rx="4" fill="#131516" stroke="#3987e5" stroke-width="1"/><text x="163.5" y="410.5" fill="#e8eaec" font-size="12" font-family="system-ui, sans-serif" text-anchor="middle">Minimal markdown</text>
+<rect x="131.5" y="481" width="64" height="64" rx="32" fill="#131516" stroke="#3987e5" stroke-width="1"/><text x="163.5" y="517" fill="#e8eaec" font-size="12" font-family="system-ui, sans-serif" text-anchor="middle">Views</text>
+</g>
+<rect x="438.25" y="90" width="1.5" height="188" fill="#9aa1a6" opacity="0.4"/>
+<rect x="391" y="50" width="96" height="28" rx="4" fill="#131516" stroke="#3987e5"/>
+<text x="439" y="68" fill="#e8eaec" font-size="12" font-family="system-ui, sans-serif" text-anchor="middle">Plugin</text>
+<rect x="574.25" y="90" width="1.5" height="188" fill="#9aa1a6" opacity="0.4"/>
+<rect x="527" y="50" width="96" height="28" rx="14" fill="#131516" stroke="#3987e5"/>
+<text x="575" y="68" fill="#e8eaec" font-size="12" font-family="system-ui, sans-serif" text-anchor="middle">Daemon</text>
+<text x="507" y="102" fill="#e8eaec" font-size="11" font-family="system-ui, sans-serif" text-anchor="middle">metrics.read</text>
+<rect x="439" y="112" width="136" height="1.5" fill="#9aa1a6" opacity="1"/>
+<polygon points="575,112.75 569,108 569,117" fill="#9aa1a6"/>
+<text x="507" y="146" fill="#e8eaec" font-size="11" font-family="system-ui, sans-serif" text-anchor="middle">cpu, memory, swap</text>
+<rect x="439" y="156" width="136" height="1.5" fill="#9aa1a6" opacity="0.45"/>
+<polygon points="439,156.75 445,152 445,161" fill="#9aa1a6"/>
+<rect x="409" y="182" width="196" height="22" rx="4" fill="#131516" stroke="#9aa1a6" stroke-opacity="0.5"/>
+<text x="507" y="197" fill="#9aa1a6" font-size="11" font-family="system-ui, sans-serif" text-anchor="middle">no RPC during transform</text>
+<text x="507" y="234" fill="#e8eaec" font-size="11" font-family="system-ui, sans-serif" text-anchor="middle">docker.read</text>
+<rect x="439" y="244" width="136" height="1.5" fill="#9aa1a6" opacity="1"/>
+<polygon points="575,244.75 569,240 569,249" fill="#9aa1a6"/>
+</svg>
