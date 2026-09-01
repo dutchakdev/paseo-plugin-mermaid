@@ -104,9 +104,11 @@ function NodeView({ node, theme }: { node: LaidOutNode; theme: PluginTheme }) {
   };
 
   if (node.shape === "diamond") {
-    // A square turned 45 degrees is the diamond; the label sits upright on top
-    // of it, which avoids counter-rotating text and the clipping that brings.
-    const side = Math.min(node.width, node.height) * 0.72;
+    // A square turned 45 degrees is the diamond. Its side is the box divided by
+    // root two, so the rotated corners reach the box edges and an arrow routed to
+    // the box touches the shape. The label sits upright on top, which avoids
+    // counter-rotating text and the clipping that brings.
+    const side = Math.min(node.width, node.height) / Math.SQRT2;
     return (
       <View style={[common, { alignItems: "center", justifyContent: "center" }]}>
         <View

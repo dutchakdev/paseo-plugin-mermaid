@@ -1,40 +1,35 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="647" height="619" viewBox="0 0 647 619">
-<rect width="647" height="619" fill="#1a1d1f" rx="12"/>
-<text x="24" y="28" fill="#9aa1a6" font-size="11" font-family="system-ui, sans-serif" letter-spacing="1">FLOWCHART</text>
-<text x="391" y="28" fill="#9aa1a6" font-size="11" font-family="system-ui, sans-serif" letter-spacing="1">SEQUENCE</text>
-<g transform="translate(24, 50)">
-<rect x="162.75" y="37" width="1.5" height="28" fill="#9aa1a6" opacity="1"/><rect x="163.5" y="65" width="1.5" height="1.5" fill="#9aa1a6" opacity="1"/><rect x="162.75" y="65" width="1.5" height="28" fill="#9aa1a6" opacity="1"/><polygon points="158.5,88 168.5,88 163.5,93" fill="#9aa1a6"/>
-<rect x="162.75" y="146" width="1.5" height="28" fill="#9aa1a6" opacity="1"/><rect x="71" y="174" width="92.5" height="1.5" fill="#9aa1a6" opacity="1"/><rect x="70.25" y="174" width="1.5" height="28" fill="#9aa1a6" opacity="1"/><polygon points="66,197 76,197 71,202" fill="#9aa1a6"/><rect x="91.25" y="166" width="52" height="16" fill="#1a1d1f"/><text x="117.25" y="178" fill="#9aa1a6" font-size="10" font-family="system-ui, sans-serif" text-anchor="middle">no</text>
-<rect x="162.75" y="146" width="1.5" height="28" fill="#9aa1a6" opacity="1"/><rect x="163.5" y="174" width="82" height="1.5" fill="#9aa1a6" opacity="1"/><rect x="244.75" y="174" width="1.5" height="28" fill="#9aa1a6" opacity="1"/><polygon points="240.5,197 250.5,197 245.5,202" fill="#9aa1a6"/><rect x="178.5" y="166" width="52" height="16" fill="#1a1d1f"/><text x="204.5" y="178" fill="#9aa1a6" font-size="10" font-family="system-ui, sans-serif" text-anchor="middle">yes</text>
-<rect x="244.75" y="239" width="1.5" height="28" fill="#9aa1a6" opacity="1"/><rect x="89" y="267" width="156.5" height="1.5" fill="#9aa1a6" opacity="1"/><rect x="88.25" y="267" width="1.5" height="28" fill="#9aa1a6" opacity="1"/><polygon points="84,290 94,290 89,295" fill="#9aa1a6"/>
-<rect x="244.75" y="239" width="1.5" height="28" fill="#9aa1a6" opacity="1"/><rect x="206.5" y="267" width="39" height="1.5" fill="#9aa1a6" opacity="1"/><rect x="205.75" y="267" width="1.5" height="28" fill="#9aa1a6" opacity="1"/><polygon points="201.5,290 211.5,290 206.5,295" fill="#9aa1a6"/>
-<rect x="88.25" y="332" width="1.5" height="28" fill="#9aa1a6" opacity="1"/><rect x="89" y="360" width="74.5" height="1.5" fill="#9aa1a6" opacity="1"/><rect x="162.75" y="360" width="1.5" height="28" fill="#9aa1a6" opacity="1"/><polygon points="158.5,383 168.5,383 163.5,388" fill="#9aa1a6"/>
-<rect x="205.75" y="332" width="1.5" height="74.5" fill="#9aa1a6" opacity="1"/><rect x="163.5" y="406.5" width="43" height="1.5" fill="#9aa1a6" opacity="1"/><rect x="162.75" y="406.5" width="1.5" height="74.5" fill="#9aa1a6" opacity="1"/><polygon points="158.5,476 168.5,476 163.5,481" fill="#9aa1a6"/>
-<rect x="162.75" y="425" width="1.5" height="28" fill="#9aa1a6" opacity="1"/><rect x="163.5" y="453" width="1.5" height="1.5" fill="#9aa1a6" opacity="1"/><rect x="162.75" y="453" width="1.5" height="28" fill="#9aa1a6" opacity="1"/><polygon points="158.5,476 168.5,476 163.5,481" fill="#9aa1a6"/>
-<rect x="96" y="0" width="135" height="37" rx="18.5" fill="#131516" stroke="#3987e5" stroke-width="1"/><text x="163.5" y="22.5" fill="#e8eaec" font-size="12" font-family="system-ui, sans-serif" text-anchor="middle">Message arrives</text>
-<rect x="144.42000000000002" y="100.42" width="38.16" height="38.16" fill="#131516" stroke="#3987e5" stroke-width="1" transform="rotate(45 163.5 119.5)"/><text x="163.5" y="123.5" fill="#e8eaec" font-size="12" font-family="system-ui, sans-serif" text-anchor="middle">Has mermaid?</text>
-<rect x="0" y="202" width="142" height="37" rx="4" fill="#131516" stroke="#3987e5" stroke-width="1"/><text x="71" y="224.5" fill="#e8eaec" font-size="12" font-family="system-ui, sans-serif" text-anchor="middle">Paseo renders it</text>
-<rect x="164" y="202" width="163" height="37" rx="4" fill="#131516" stroke="#3987e5" stroke-width="1"/><line x1="169" y1="202" x2="169" y2="239" stroke="#3987e5"/><line x1="322" y1="202" x2="322" y2="239" stroke="#3987e5"/><text x="245.5" y="224.5" fill="#e8eaec" font-size="12" font-family="system-ui, sans-serif" text-anchor="middle">Split into segments</text>
-<rect x="57" y="295" width="64" height="37" rx="12" fill="#131516" stroke="#3987e5" stroke-width="1"/><text x="89" y="317.5" fill="#e8eaec" font-size="12" font-family="system-ui, sans-serif" text-anchor="middle">Prose</text>
-<rect x="143" y="295" width="127" height="37" rx="12" fill="#131516" stroke="#3987e5" stroke-width="1"/><text x="206.5" y="317.5" fill="#e8eaec" font-size="12" font-family="system-ui, sans-serif" text-anchor="middle">Diagram source</text>
-<rect x="92.5" y="388" width="142" height="37" rx="4" fill="#131516" stroke="#3987e5" stroke-width="1"/><text x="163.5" y="410.5" fill="#e8eaec" font-size="12" font-family="system-ui, sans-serif" text-anchor="middle">Minimal markdown</text>
-<rect x="131.5" y="481" width="64" height="64" rx="32" fill="#131516" stroke="#3987e5" stroke-width="1"/><text x="163.5" y="517" fill="#e8eaec" font-size="12" font-family="system-ui, sans-serif" text-anchor="middle">Views</text>
-</g>
-<rect x="438.25" y="90" width="1.5" height="188" fill="#9aa1a6" opacity="0.4"/>
-<rect x="391" y="50" width="96" height="28" rx="4" fill="#131516" stroke="#3987e5"/>
-<text x="439" y="68" fill="#e8eaec" font-size="12" font-family="system-ui, sans-serif" text-anchor="middle">Plugin</text>
-<rect x="574.25" y="90" width="1.5" height="188" fill="#9aa1a6" opacity="0.4"/>
-<rect x="527" y="50" width="96" height="28" rx="14" fill="#131516" stroke="#3987e5"/>
-<text x="575" y="68" fill="#e8eaec" font-size="12" font-family="system-ui, sans-serif" text-anchor="middle">Daemon</text>
-<text x="507" y="102" fill="#e8eaec" font-size="11" font-family="system-ui, sans-serif" text-anchor="middle">metrics.read</text>
-<rect x="439" y="112" width="136" height="1.5" fill="#9aa1a6" opacity="1"/>
-<polygon points="575,112.75 569,108 569,117" fill="#9aa1a6"/>
-<text x="507" y="146" fill="#e8eaec" font-size="11" font-family="system-ui, sans-serif" text-anchor="middle">cpu, memory, swap</text>
-<rect x="439" y="156" width="136" height="1.5" fill="#9aa1a6" opacity="0.45"/>
-<polygon points="439,156.75 445,152 445,161" fill="#9aa1a6"/>
-<rect x="409" y="182" width="196" height="22" rx="4" fill="#131516" stroke="#9aa1a6" stroke-opacity="0.5"/>
-<text x="507" y="197" fill="#9aa1a6" font-size="11" font-family="system-ui, sans-serif" text-anchor="middle">no RPC during transform</text>
-<text x="507" y="234" fill="#e8eaec" font-size="11" font-family="system-ui, sans-serif" text-anchor="middle">docker.read</text>
-<rect x="439" y="244" width="136" height="1.5" fill="#9aa1a6" opacity="1"/>
-<polygon points="575,244.75 569,240 569,249" fill="#9aa1a6"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="615" viewBox="0 0 1180 615">
+<rect x="0" y="0" width="1180" height="615" rx="14" fill="#0f1112"/>
+<rect x="208" y="0" width="972" height="615" fill="#131516"/>
+<circle cx="24" cy="22" r="6" fill="#ff5f57"/>
+<circle cx="42" cy="22" r="6" fill="#febc2e"/>
+<circle cx="60" cy="22" r="6" fill="#28c840"/>
+<text x="24" y="78" fill="#9aa1a6" font-size="13" font-weight="400" font-family="system-ui, -apple-system, sans-serif" text-anchor="start" >New workspace</text>
+<text x="24" y="112" fill="#9aa1a6" font-size="13" font-weight="400" font-family="system-ui, -apple-system, sans-serif" text-anchor="start" >History</text>
+<rect x="14" y="128" width="180" height="32" rx="8" fill="rgba(57,135,229,0.12)" stroke="#3987e5"/>
+<text x="24" y="148" fill="#e8eaec" font-size="13" font-weight="600" font-family="system-ui, -apple-system, sans-serif" text-anchor="start" >paseo-plugins</text>
+<text x="24" y="184" fill="#626a70" font-size="9" font-weight="600" font-family="system-ui, -apple-system, sans-serif" text-anchor="start" >PINNED</text>
+<text x="24" y="210" fill="#9aa1a6" font-size="12" font-weight="400" font-family="system-ui, -apple-system, sans-serif" text-anchor="start" >acme/storefront</text>
+<text x="234" y="30" fill="#9aa1a6" font-size="12" font-weight="600" font-family="system-ui, -apple-system, sans-serif" text-anchor="start" >Claude · claude-opus-5</text>
+<line x1="208" y1="44" x2="1180" y2="44" stroke="rgba(255,255,255,0.10)"/>
+<rect x="234" y="80" width="280.42999999999995" height="34" rx="10" fill="#1d2226"/>
+<text x="250" y="102" fill="#e8eaec" font-size="13" font-weight="400" font-family="system-ui, -apple-system, sans-serif" text-anchor="start" >How does the plugin decide what to draw?</text>
+<text x="234" y="142" fill="#e8eaec" font-size="13" font-weight="400" font-family="system-ui, -apple-system, sans-serif" text-anchor="start" >It only takes over a message when there is a diagram in it:</text>
+<g transform="translate(234, 168)"><rect x="78" y="62.5" width="28" height="1.5" fill="#9aa1a6" opacity="1"/><rect x="105.25" y="62.5" width="1.5" height="1.5" fill="#9aa1a6" opacity="1"/><rect x="106" y="62.5" width="28" height="1.5" fill="#9aa1a6" opacity="1"/><polygon points="134,62.5 128,57.5 128,67.5" fill="#9aa1a6"/><rect x="259" y="62.5" width="28" height="1.5" fill="#9aa1a6" opacity="1"/><rect x="286.25" y="33" width="1.5" height="29.5" fill="#9aa1a6" opacity="1"/><rect x="287" y="33" width="28" height="1.5" fill="#9aa1a6" opacity="1"/><polygon points="315,33 309,28 309,38" fill="#9aa1a6"/><rect x="276.7" y="39.75" width="20.6" height="16" rx="0" fill="#1a1d1f"/><text x="287" y="51.75" fill="#9aa1a6" font-size="10" font-weight="400" font-family="system-ui, -apple-system, sans-serif" text-anchor="middle" >no</text><rect x="259" y="62.5" width="28" height="1.5" fill="#9aa1a6" opacity="1"/><rect x="286.25" y="62.5" width="1.5" height="29.5" fill="#9aa1a6" opacity="1"/><rect x="287" y="92" width="28" height="1.5" fill="#9aa1a6" opacity="1"/><polygon points="315,92 309,87 309,97" fill="#9aa1a6"/><rect x="274.05" y="69.25" width="25.900000000000002" height="16" rx="0" fill="#1a1d1f"/><text x="287" y="81.25" fill="#9aa1a6" font-size="10" font-weight="400" font-family="system-ui, -apple-system, sans-serif" text-anchor="middle" >yes</text><rect x="379" y="92" width="67" height="1.5" fill="#9aa1a6" opacity="1"/><rect x="445.25" y="33" width="1.5" height="59" fill="#9aa1a6" opacity="1"/><rect x="446" y="33" width="67" height="1.5" fill="#9aa1a6" opacity="1"/><polygon points="513,33 507,28 507,38" fill="#9aa1a6"/><rect x="379" y="92" width="67" height="1.5" fill="#9aa1a6" opacity="0.45"/><rect x="445.25" y="92" width="1.5" height="13.5" fill="#9aa1a6" opacity="0.45"/><rect x="446" y="105.5" width="67" height="1.5" fill="#9aa1a6" opacity="0.45"/><polygon points="513,105.5 507,100.5 507,110.5" fill="#9aa1a6"/><rect x="419.8" y="90.75" width="52.400000000000006" height="16" rx="0" fill="#1a1d1f"/><text x="446" y="102.75" fill="#9aa1a6" font-size="10" font-weight="400" font-family="system-ui, -apple-system, sans-serif" text-anchor="middle" >unparsed</text><rect x="0" y="44" width="78" height="37" rx="18.5" fill="#131516" stroke="#3987e5"/><text x="39" y="66.5" fill="#e8eaec" font-size="12" font-weight="400" font-family="system-ui, -apple-system, sans-serif" text-anchor="middle" >Message</text><rect x="152.3058261758408" y="18.305826175840785" width="88.38834764831843" height="88.38834764831843" fill="#131516" stroke="#3987e5" transform="rotate(45 196.5 62.5)"/><text x="196.5" y="66.5" fill="#e8eaec" font-size="12" font-weight="400" font-family="system-ui, -apple-system, sans-serif" text-anchor="middle" >Has mermaid?</text><rect x="315" y="14.5" width="142" height="37" rx="4" fill="#131516" stroke="#3987e5"/><text x="386" y="37" fill="#e8eaec" font-size="12" font-weight="400" font-family="system-ui, -apple-system, sans-serif" text-anchor="middle" >Paseo renders it</text><rect x="315" y="73.5" width="64" height="37" rx="4" fill="#131516" stroke="#3987e5"/><line x1="320" y1="73.5" x2="320" y2="110.5" stroke="#3987e5"/><line x1="374" y1="73.5" x2="374" y2="110.5" stroke="#3987e5"/><text x="347" y="96" fill="#e8eaec" font-size="12" font-weight="400" font-family="system-ui, -apple-system, sans-serif" text-anchor="middle" >Split</text><rect x="513" y="1" width="64" height="64" rx="32" fill="#131516" stroke="#3987e5"/><text x="545" y="37" fill="#e8eaec" font-size="12" font-weight="400" font-family="system-ui, -apple-system, sans-serif" text-anchor="middle" >Views</text><rect x="513" y="87" width="106" height="37" rx="4" fill="#131516" stroke="#3987e5"/><text x="566" y="109.5" fill="#e8eaec" font-size="12" font-weight="400" font-family="system-ui, -apple-system, sans-serif" text-anchor="middle" >Show source</text></g>
+<rect x="281.25" y="367" width="1.5" height="132" fill="#9aa1a6" opacity="0.35"/>
+<rect x="234" y="327" width="96" height="28" rx="4" fill="#131516" stroke="#3987e5"/>
+<text x="282" y="345" fill="#e8eaec" font-size="12" font-weight="400" font-family="system-ui, -apple-system, sans-serif" text-anchor="middle" >Plugin</text>
+<rect x="417.25" y="367" width="1.5" height="132" fill="#9aa1a6" opacity="0.35"/>
+<rect x="370" y="327" width="96" height="28" rx="14" fill="#131516" stroke="#3987e5"/>
+<text x="418" y="345" fill="#e8eaec" font-size="12" font-weight="400" font-family="system-ui, -apple-system, sans-serif" text-anchor="middle" >Daemon</text>
+<text x="350" y="379" fill="#e8eaec" font-size="11" font-weight="400" font-family="system-ui, -apple-system, sans-serif" text-anchor="middle" >metrics.read</text>
+<rect x="282" y="389" width="136" height="1.5" rx="0" fill="#9aa1a6"/>
+<polygon points="418,389.75 411,385 411,394" fill="#9aa1a6"/>
+<text x="350" y="423" fill="#e8eaec" font-size="11" font-weight="400" font-family="system-ui, -apple-system, sans-serif" text-anchor="middle" >cpu, memory, swap</text>
+<rect x="282" y="433" width="136" height="1.5" rx="0" fill="#9aa1a6"/>
+<polygon points="282,433.75 289,429 289,438" fill="#9aa1a6"/>
+<rect x="242" y="459" width="216" height="22" rx="4" fill="#1a1d1f" stroke="rgba(255,255,255,0.10)"/>
+<text x="350" y="474" fill="#9aa1a6" font-size="11" font-weight="400" font-family="system-ui, -apple-system, sans-serif" text-anchor="middle" >no RPC during transform</text>
+<rect x="234" y="557" width="920" height="40" rx="12" fill="#1a1d1f" stroke="rgba(255,255,255,0.10)"/>
+<text x="250" y="582" fill="#626a70" font-size="13" font-weight="400" font-family="system-ui, -apple-system, sans-serif" text-anchor="start" >Message, @files, /commands</text>
 </svg>

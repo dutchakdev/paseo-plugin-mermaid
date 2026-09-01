@@ -147,3 +147,16 @@ describe("layoutSequence", () => {
     expect(layoutSequence(people, 0).rows).toEqual([]);
   });
 });
+
+describe("diamond geometry", () => {
+  it("gives a diamond a square box, so its rotated corners reach the edges", () => {
+    const box = measureNode({ id: "A", label: "Has mermaid?", shape: "diamond" });
+    expect(box.width).toBe(box.height);
+  });
+
+  it("keeps the box wide enough for the label across the diagonal", () => {
+    const plain = measureNode({ id: "A", label: "Has mermaid?", shape: "rect" });
+    const diamond = measureNode({ id: "A", label: "Has mermaid?", shape: "diamond" });
+    expect(diamond.width).toBeGreaterThan(plain.width);
+  });
+});

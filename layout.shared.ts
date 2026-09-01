@@ -51,8 +51,13 @@ export function measureNode(node: FlowNode): { width: number; height: number } {
   const longest = Math.max(...lines.map((line) => line.length), 1);
   const width = Math.max(MIN_WIDTH, Math.round(longest * CHAR_WIDTH) + PADDING_X * 2);
   const height = lines.length * LINE_HEIGHT + PADDING_Y * 2;
-  // A diamond needs room for its points; a circle has to contain its label.
-  if (node.shape === "diamond") return { width: width + 24, height: height + 16 };
+  // A diamond is a square rotated 45 degrees, so its box has to be square too:
+  // the rendered corners then touch the box edges exactly, and an edge routed to
+  // the box lands on the shape instead of stopping short of it.
+  if (node.shape === "diamond") {
+    const side = Math.round(Math.max(width, height) * Math.SQRT2 * 0.78);
+    return { width: side, height: side };
+  }
   if (node.shape === "circle") {
     const side = Math.max(width, height);
     return { width: side, height: side };
