@@ -1,10 +1,12 @@
 /**
- * Renders the README preview: a diagram as it appears in a Paseo transcript.
+ * Renders the README preview: what the plugin draws, and nothing else.
  *
- * The diagram is produced by the plugin's own parser and layout; the SVG only
- * swaps the drawing backend, since a Paseo client bundle has Views where this
- * has shapes. The chat frame around it is decoration, drawn here so the plugin
- * is shown where it actually renders.
+ * The diagrams come from the plugin's own parser and layout; the SVG only swaps
+ * the drawing backend, since a Paseo client bundle has Views where this has
+ * shapes. So the picture cannot drift from the code that produces it.
+ *
+ * There is deliberately no imitation of the Paseo window around it. A drawn
+ * frame would claim to be a screenshot of something this script never saw.
  *
  *   npm run preview
  */
@@ -108,41 +110,20 @@ const columns = layoutSequence(sequence.participants, sequence.events.length);
 
 /* --------------------------------------------------------------- chrome -- */
 
-const SIDEBAR = 208;
-const WIDTH = 1180;
-const TITLEBAR = 44;
+const WIDTH = 980;
 const PAD = 26;
-const contentX = SIDEBAR + PAD;
+const contentX = PAD;
 
 const parts: string[] = [];
-const bodyY = TITLEBAR + 22;
 
-const userY = bodyY + 14;
-const proseY = userY + 62;
-const flowY = proseY + 26;
-const seqY = flowY + flow.height + 34;
-const HEIGHT = seqY + columns.height + 30 + 74;
+const flowY = 58;
+const seqY = flowY + flow.height + 56;
+const HEIGHT = seqY + columns.height + 24;
 
 parts.push(
-  rect(0, 0, WIDTH, HEIGHT, INK.chrome, 14),
-  `<rect x="${SIDEBAR}" y="0" width="${WIDTH - SIDEBAR}" height="${HEIGHT}" fill="${INK.surface}"/>`,
-  ...["#ff5f57", "#febc2e", "#28c840"].map((c, i) => `<circle cx="${24 + i * 18}" cy="${TITLEBAR / 2}" r="6" fill="${c}"/>`),
-  text(24, TITLEBAR + 34, "New workspace", INK.muted, 13),
-  text(24, TITLEBAR + 68, "History", INK.muted, 13),
-  rect(14, TITLEBAR + 84, SIDEBAR - 28, 32, "rgba(57,135,229,0.12)", 8, INK.accent),
-  text(24, TITLEBAR + 104, "paseo-plugins", INK.text, 13, "600"),
-  text(24, TITLEBAR + 140, "PINNED", INK.faint, 9, "600"),
-  text(24, TITLEBAR + 166, "acme/storefront", INK.muted, 12),
-  text(contentX, TITLEBAR - 14, "Claude · claude-opus-5", INK.muted, 12, "600"),
-  `<line x1="${SIDEBAR}" y1="${TITLEBAR}" x2="${WIDTH}" y2="${TITLEBAR}" stroke="${INK.line}"/>`,
-);
-
-// the user's question, then the reply the plugin renders
-const question = "How does the plugin decide what to draw?";
-parts.push(
-  rect(contentX, userY, width(question, 13) + 32, 34, INK.user, 10),
-  text(contentX + 16, userY + 22, question, INK.text, 13),
-  text(contentX, proseY, "It only takes over a message when there is a diagram in it:", INK.text, 13),
+  rect(0, 0, WIDTH, HEIGHT, INK.surface, 14),
+  text(contentX, 32, "FLOWCHART", INK.faint, 10, "600", "start", 'letter-spacing="1.4"'),
+  text(contentX, flowY + flow.height + 34, "SEQUENCE DIAGRAM", INK.faint, 10, "600", "start", 'letter-spacing="1.4"'),
 );
 
 parts.push(`<g transform="translate(${contentX}, ${flowY})">${flow.edges.map(edge).join("")}${flow.nodes.map((n) => {
@@ -182,13 +163,6 @@ sequence.events.forEach((event, index) => {
     `<polygon points="${to},${y + 22.75} ${to + (forward ? -7 : 7)},${y + 18} ${to + (forward ? -7 : 7)},${y + 27}" fill="${INK.muted}"/>`,
   );
 });
-
-// composer, with the machine-status pill for good measure
-const composerY = HEIGHT - 58;
-parts.push(
-  rect(contentX, composerY, WIDTH - contentX - PAD, 40, INK.card, 12, INK.line),
-  text(contentX + 16, composerY + 25, "Message, @files, /commands", INK.faint, 13),
-);
 
 const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${WIDTH}" height="${HEIGHT}" viewBox="0 0 ${WIDTH} ${HEIGHT}">
 ${parts.join("\n")}

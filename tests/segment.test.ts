@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { hasMermaid, segmentMessage } from "../segment.shared";
+import { hasMermaid, namesADiagram, segmentMessage } from "../segment.shared";
 
 describe("segmentMessage", () => {
   it("splits prose, diagram and prose", () => {
@@ -24,9 +24,23 @@ describe("segmentMessage", () => {
     expect(segments.filter((segment) => segment.kind === "mermaid")).toHaveLength(1);
   });
 
-  it("keeps an unterminated fence as text, since the message may still be streaming", () => {
-    const segments = segmentMessage("Here:\n\n```mermaid\nflowchart TD");
+  it("claims an unterminated mermaid fence, so the host renderer never gets it first", () => {
+    const segments = segmentMessage("Here:\n\n```mermaid\nflowchart TD\n  A --> B");
+    const diagrams = segments.filter((segment) => segment.kind === "mermaid");
+    expect(diagrams).toHaveLength(1);
+    expect(diagrams[0]).toMatchObject({ source: "flowchart TD\n  A --> B" });
+    expect(segments.filter((segment) => segment.kind === "text")).toHaveLength(1);
+  });
+
+  it("leaves an unterminated fence of any other language as text", () => {
+    const segments = segmentMessage("Here:\n\n```ts\nconst a = 1;");
     expect(segments.every((segment) => segment.kind === "text")).toBe(true);
+  });
+
+  it("knows unfinished source from source it cannot draw", () => {
+    expect(namesADiagram("flowchart LR")).toBe(true);
+    expect(namesADiagram("\n  sequenceDiagram\n  A ->> B: hi")).toBe(true);
+    expect(namesADiagram("gantt\n  title Nope")).toBe(false);
   });
 
   it("finds several diagrams in one message", () => {

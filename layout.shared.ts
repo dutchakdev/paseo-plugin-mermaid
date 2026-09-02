@@ -45,6 +45,8 @@ const MIN_WIDTH = 56;
 const LAYER_GAP = 56;
 const NODE_GAP = 22;
 const LINE = 1.5;
+/** Breadth reserved for each lane an edge that skips a layer runs through. */
+const LANE_GAP = 26;
 
 export function measureNode(node: FlowNode): { width: number; height: number } {
   const lines = node.label.split("\n");
@@ -206,25 +208,43 @@ export function layoutFlowchart(chart: Flowchart): FlowLayout {
   );
   const finals = new Map(nodes.map((node) => [node.id, node]));
 
-  const edges = chart.edges.map((edge) => route(edge, finals.get(edge.from), finals.get(edge.to), across));
+  // An edge that skips a layer cannot be routed between its endpoints: the
+  // straight path crosses whatever sits in the layers between them. Those edges
+  // get a lane outside the node band instead, one per edge so they do not stack.
+  const spans = (edge: FlowEdge): boolean => {
+    const from = finals.get(edge.from);
+    const to = finals.get(edge.to);
+    return !!from && !!to && Math.abs(to.layer - from.layer) > 1;
+  };
+  const longEdges = chart.edges.filter(spans);
+  const laneBand = longEdges.length * LANE_GAP + (longEdges.length > 0 ? LANE_GAP : 0);
+
+  const contentBreadth = across ? widestRow : totalDepth;
+  const lanes = new Map(longEdges.map((edge, index) => [edge, contentBreadth + LANE_GAP * (index + 1)]));
+
+  const edges = chart.edges.map((edge) =>
+    route(edge, finals.get(edge.from), finals.get(edge.to), across, lanes.get(edge)),
+  );
 
   return {
     direction: chart.direction,
     nodes,
     edges,
-    width: across ? totalDepth : widestRow,
-    height: across ? widestRow : totalDepth,
+    width: across ? totalDepth : widestRow + laneBand,
+    height: across ? widestRow + laneBand : totalDepth,
   };
 }
 
-/** Three orthogonal segments: out of the source, across, into the target. */
+/** Three orthogonal segments between neighbours; five through a lane when not. */
 function route(
   edge: FlowEdge,
   from: LaidOutNode | undefined,
   to: LaidOutNode | undefined,
   across: boolean,
+  lane?: number,
 ): LaidOutEdge {
   if (!from || !to) return { ...edge, segments: [], arrowAt: null, labelAt: null };
+  if (lane !== undefined) return routeThroughLane(edge, from, to, across, lane);
 
   if (across) {
     const forward = to.x >= from.x;
@@ -262,6 +282,61 @@ function route(
     ],
     arrowAt: edge.arrow ? { x: endX, y: endY, direction: forward ? "down" : "up" } : null,
     labelAt: { x: (startX + endX) / 2, y: midY },
+  };
+}
+
+/**
+ * Out of the source, down to a lane clear of every node, across, and back up
+ * into the target. Longer than a direct route, and the only one that is honest
+ * about not passing through the boxes in between.
+ */
+function routeThroughLane(
+  edge: FlowEdge,
+  from: LaidOutNode,
+  to: LaidOutNode,
+  across: boolean,
+  lane: number,
+): LaidOutEdge {
+  if (across) {
+    const startX = from.x + from.width;
+    const endX = to.x;
+    const startY = from.y + from.height / 2;
+    const endY = to.y + to.height / 2;
+    const outX = startX + LANE_GAP / 2;
+    const inX = endX - LANE_GAP / 2;
+
+    return {
+      ...edge,
+      segments: [
+        span(startX, startY, outX - startX, LINE),
+        span(outX - LINE / 2, Math.min(startY, lane), LINE, Math.abs(lane - startY)),
+        span(Math.min(outX, inX), lane, Math.abs(inX - outX), LINE),
+        span(inX - LINE / 2, Math.min(endY, lane), LINE, Math.abs(lane - endY)),
+        span(inX, endY, endX - inX, LINE),
+      ],
+      arrowAt: edge.arrow ? { x: endX, y: endY, direction: "right" } : null,
+      labelAt: { x: (outX + inX) / 2, y: lane },
+    };
+  }
+
+  const startY = from.y + from.height;
+  const endY = to.y;
+  const startX = from.x + from.width / 2;
+  const endX = to.x + to.width / 2;
+  const outY = startY + LANE_GAP / 2;
+  const inY = endY - LANE_GAP / 2;
+
+  return {
+    ...edge,
+    segments: [
+      span(startX - LINE / 2, startY, LINE, outY - startY),
+      span(Math.min(startX, lane), outY, Math.abs(lane - startX), LINE),
+      span(lane - LINE / 2, Math.min(outY, inY), LINE, Math.abs(inY - outY)),
+      span(Math.min(lane, endX), inY, Math.abs(endX - lane), LINE),
+      span(endX - LINE / 2, inY, LINE, endY - inY),
+    ],
+    arrowAt: edge.arrow ? { x: endX, y: endY, direction: "down" } : null,
+    labelAt: { x: lane, y: (outY + inY) / 2 },
   };
 }
 
@@ -331,4 +406,32 @@ export function layoutSequence(
     width: Math.max(0, cursor - SEQ_GAP),
     height: SEQ_HEADER + eventCount * SEQ_ROW + 12,
   };
+}
+
+/* -------------------------------------------------------------------------- */
+/* Fitting a drawing to the space it gets                                       */
+/* -------------------------------------------------------------------------- */
+
+/** Below this the labels stop being readable; scroll instead of shrinking further. */
+export const MIN_SCALE = 0.55;
+/** Above this a three-node diagram would look like a poster. */
+export const MAX_SCALE = 1.3;
+
+/**
+ * How much to scale a drawing for the width it was actually given.
+ *
+ * A diagram has no business being rendered at whatever size its node labels
+ * happened to add up to. Wide ones shrink to fit, small ones grow a little so
+ * they do not sit lost in a wide row, and the shrinking stops where the text
+ * stops being readable — past that the caller scrolls instead.
+ */
+export function fitScale(available: number, natural: number): number {
+  if (!(available > 0) || !(natural > 0)) return 1;
+  return Math.min(MAX_SCALE, Math.max(MIN_SCALE, available / natural));
+}
+
+/** True when the drawing still does not fit after shrinking as far as it may. */
+export function overflowsAfterFit(available: number, natural: number): boolean {
+  if (!(available > 0) || !(natural > 0)) return false;
+  return natural * fitScale(available, natural) > available + 0.5;
 }

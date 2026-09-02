@@ -62,10 +62,33 @@ export function segmentMessage(text: string): Segment[] {
     body.push(line);
   }
 
-  // An unterminated fence is kept verbatim; the message is probably still streaming.
-  if (fence !== null) prose.push(`${fence}${language}`, ...body);
+  // An unterminated mermaid fence is claimed anyway, while the diagram is still
+  // arriving. Paseo renders ```mermaid fences itself, and it starts the moment the
+  // fence opens, so a transformer that politely waits for the closing fence has
+  // already lost the item to the host and only wins it back on the next
+  // reprojection. That is the whole reason a fresh diagram used to look different
+  // from the same diagram after a reload. Other unterminated fences stay prose.
+  if (fence !== null) {
+    if (language === "mermaid") {
+      flushProse();
+      segments.push({ kind: "mermaid", source: body.join("\n").trim() });
+    } else {
+      prose.push(`${fence}${language}`, ...body);
+    }
+  }
   flushProse();
   return segments;
+}
+
+/**
+ * True when the source already names a diagram this plugin draws.
+ *
+ * Half-arrived source parses to nothing, and complaining that it is unsupported
+ * would be wrong: it is unfinished, not unsupported.
+ */
+export function namesADiagram(source: string): boolean {
+  const first = source.split("\n").find((line) => line.trim().length > 0) ?? "";
+  return /^(flowchart|graph|sequenceDiagram)\b/.test(first.trim());
 }
 
 /** True when the message is worth taking over at all. */

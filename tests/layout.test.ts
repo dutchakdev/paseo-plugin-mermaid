@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { parseFlowchart } from "../flowchart.shared";
-import { assignLayers, layoutFlowchart, layoutSequence, measureNode } from "../layout.shared";
+import {
+  assignLayers,
+  fitScale,
+  layoutFlowchart,
+  layoutSequence,
+  measureNode,
+  overflowsAfterFit,
+} from "../layout.shared";
 
 const chart = (source: string) => parseFlowchart(source)!;
 
@@ -158,5 +165,83 @@ describe("diamond geometry", () => {
     const plain = measureNode({ id: "A", label: "Has mermaid?", shape: "rect" });
     const diamond = measureNode({ id: "A", label: "Has mermaid?", shape: "diamond" });
     expect(diamond.width).toBeGreaterThan(plain.width);
+  });
+});
+
+describe("fitScale", () => {
+  it("shrinks a wide diagram to the width it was given", () => {
+    expect(fitScale(900, 1200)).toBeCloseTo(0.75);
+  });
+
+  it("grows a small diagram so it does not sit lost in a wide row", () => {
+    expect(fitScale(900, 300)).toBe(1.3);
+  });
+
+  it("never shrinks past the point where labels stop being readable", () => {
+    expect(fitScale(100, 2000)).toBe(0.55);
+  });
+
+  it("leaves the drawing alone before the container has been measured", () => {
+    expect(fitScale(0, 800)).toBe(1);
+    expect(fitScale(600, 0)).toBe(1);
+  });
+
+  it("reports the case where scrolling is still needed after shrinking", () => {
+    expect(overflowsAfterFit(100, 2000)).toBe(true);
+  });
+
+  it("reports no overflow once the diagram fits", () => {
+    expect(overflowsAfterFit(900, 1200)).toBe(false);
+    expect(overflowsAfterFit(900, 300)).toBe(false);
+  });
+});
+
+describe("edges that skip a layer", () => {
+  // Cached? --> Response jumps two layers past Query database and Write cache.
+  const source = `flowchart LR
+    Req([Request]) --> Auth{Authorized?}
+    Auth --> Cache{Cached?}
+    Cache -->|miss| Query[[Query database]]
+    Cache -->|hit| Serve((Response))
+    Query --> Store(Write cache)
+    Store --> Serve`;
+
+  const layout = layoutFlowchart(parseFlowchart(source)!);
+  const long = layout.edges.find((edge) => edge.from === "Cache" && edge.to === "Serve")!;
+  const boxes = layout.nodes.filter((node) => node.id !== "Cache" && node.id !== "Serve");
+
+  it("routes the long edge with five segments rather than three", () => {
+    expect(long.segments).toHaveLength(5);
+    const direct = layout.edges.find((edge) => edge.from === "Query" && edge.to === "Store")!;
+    expect(direct.segments).toHaveLength(3);
+  });
+
+  it("keeps every segment of the long edge out of the boxes it skips", () => {
+    for (const segment of long.segments) {
+      for (const box of boxes) {
+        const overlaps =
+          segment.x < box.x + box.width &&
+          segment.x + segment.width > box.x &&
+          segment.y < box.y + box.height &&
+          segment.y + segment.height > box.y;
+        expect(overlaps, `${long.from}->${long.to} crosses ${box.id}`).toBe(false);
+      }
+    }
+  });
+
+  it("grows the canvas so the lane is inside it", () => {
+    const lowest = Math.max(...long.segments.map((segment) => segment.y + segment.height));
+    expect(lowest).toBeLessThanOrEqual(layout.height);
+  });
+
+  it("still points the arrow into the target", () => {
+    const target = layout.nodes.find((node) => node.id === "Serve")!;
+    expect(long.arrowAt?.direction).toBe("right");
+    expect(long.arrowAt?.x).toBeCloseTo(target.x);
+  });
+
+  it("puts the label on the lane, clear of the nodes", () => {
+    expect(long.label).toBe("hit");
+    for (const box of boxes) expect(long.labelAt!.y).toBeGreaterThan(box.y + box.height);
   });
 });
