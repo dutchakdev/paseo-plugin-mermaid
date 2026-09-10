@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseInline, parseMarkdown } from "../markdown.shared";
+import { parseInline, parseMarkdown } from "../shared/markdown";
 
 describe("parseInline", () => {
   it("reads bold, italic and code", () => {

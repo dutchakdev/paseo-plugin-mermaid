@@ -1,8 +1,8 @@
-import type { PluginTimelineItemProps } from "@getpaseo/plugin";
+import type { PluginTimelineItemProps } from "@getpaseo/plugin/client";
 import React from "react";
 import { View } from "react-native";
-import { Diagram } from "./diagram.client";
-import { Markdown } from "./markdown.client";
+import { Diagram } from "./diagram";
+import { Markdown } from "./markdown";
 
 export interface TextData {
   text: string;

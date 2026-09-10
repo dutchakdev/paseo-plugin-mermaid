@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseSequence } from "../sequence.shared";
+import { parseSequence } from "../shared/sequence";
 
 const DIAGRAM = `sequenceDiagram
     participant U as User

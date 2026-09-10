@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { hasMermaid, namesADiagram, segmentMessage } from "../segment.shared";
+import { hasMermaid, namesADiagram, segmentMessage } from "../shared/segment";
 
 describe("segmentMessage", () => {
   it("splits prose, diagram and prose", () => {

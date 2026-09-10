@@ -1,5 +1,5 @@
 import type { PluginTimelineItem } from "@getpaseo/plugin";
-import { segmentMessage } from "./segment.shared";
+import { segmentMessage } from "./segment";
 
 export const DIAGRAM_KIND = "mermaid-diagram";
 export const TEXT_KIND = "mermaid-text";

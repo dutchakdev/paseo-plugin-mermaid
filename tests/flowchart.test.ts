@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { normalizeEdgeLabels, parseFlowchart, parseNodeExpression, splitChain } from "../flowchart.shared";
+import { normalizeEdgeLabels, parseFlowchart, parseNodeExpression, splitChain } from "../shared/flowchart";
 
 describe("parseNodeExpression", () => {
   it("reads every bracket shape Mermaid defines", () => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DIAGRAM_KIND, split, TEXT_KIND } from "../transform.shared";
+import { DIAGRAM_KIND, split, TEXT_KIND } from "../shared/transform";
 
 const DIAGRAM = "```mermaid\nflowchart TD\n  A --> B\n```";
 

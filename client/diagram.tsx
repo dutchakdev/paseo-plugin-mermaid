@@ -1,8 +1,8 @@
 import type { PluginTheme } from "@getpaseo/plugin";
 import React, { useMemo, useState } from "react";
 import { LayoutChangeEvent, ScrollView, StyleSheet, Text, View } from "react-native";
-import { parseFlowchart, type NodeShape } from "./flowchart.shared";
-import { namesADiagram } from "./segment.shared";
+import { parseFlowchart, type NodeShape } from "../shared/flowchart";
+import { namesADiagram } from "../shared/segment";
 import {
   fitScale,
   layoutFlowchart,
@@ -10,8 +10,8 @@ import {
   overflowsAfterFit,
   type LaidOutEdge,
   type LaidOutNode,
-} from "./layout.shared";
-import { parseSequence, type SeqEvent } from "./sequence.shared";
+} from "../shared/layout";
+import { parseSequence, type SeqEvent } from "../shared/sequence";
 
 /**
  * Draws Mermaid with plain Views.

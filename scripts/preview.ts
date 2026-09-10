@@ -12,9 +12,9 @@
  */
 import { writeFileSync } from "node:fs";
 import { URL } from "node:url";
-import { parseFlowchart } from "../flowchart.shared";
-import { layoutFlowchart, layoutSequence, type LaidOutEdge, type LaidOutNode } from "../layout.shared";
-import { parseSequence } from "../sequence.shared";
+import { parseFlowchart } from "../shared/flowchart";
+import { layoutFlowchart, layoutSequence, type LaidOutEdge, type LaidOutNode } from "../shared/layout";
+import { parseSequence } from "../shared/sequence";
 
 const INK = {
   chrome: "#0f1112",

@@ -1,7 +1,7 @@
 import type { PluginTheme } from "@getpaseo/plugin";
 import React, { useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { parseMarkdown, type Block, type Inline } from "./markdown.shared";
+import { parseMarkdown, type Block, type Inline } from "../shared/markdown";
 
 /**
  * Renders the prose around a diagram.

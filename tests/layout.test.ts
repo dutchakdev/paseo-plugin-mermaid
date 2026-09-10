@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseFlowchart } from "../flowchart.shared";
+import { parseFlowchart } from "../shared/flowchart";
 import {
   assignLayers,
   fitScale,
@@ -7,7 +7,7 @@ import {
   layoutSequence,
   measureNode,
   overflowsAfterFit,
-} from "../layout.shared";
+} from "../shared/layout";
 
 const chart = (source: string) => parseFlowchart(source)!;
 

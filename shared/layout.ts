@@ -1,4 +1,4 @@
-import type { Direction, Flowchart, FlowEdge, FlowNode } from "./flowchart.shared";
+import type { Direction, Flowchart, FlowEdge, FlowNode } from "./flowchart";
 
 /**
  * Layered layout for a flowchart, computed here rather than in the renderer so
