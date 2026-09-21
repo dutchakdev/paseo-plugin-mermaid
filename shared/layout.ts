@@ -430,8 +430,11 @@ export function fitScale(available: number, natural: number): number {
   return Math.min(MAX_SCALE, Math.max(MIN_SCALE, available / natural));
 }
 
-/** True when the drawing still does not fit after shrinking as far as it may. */
-export function overflowsAfterFit(available: number, natural: number): boolean {
+/**
+ * True when the drawing still does not fit after shrinking as far as it may,
+ * or when the reader has zoomed a fitted drawing past the row.
+ */
+export function overflowsAfterFit(available: number, natural: number, zoom = 1): boolean {
   if (!(available > 0) || !(natural > 0)) return false;
-  return natural * fitScale(available, natural) > available + 0.5;
+  return natural * fitScale(available, natural) * zoom > available + 0.5;
 }

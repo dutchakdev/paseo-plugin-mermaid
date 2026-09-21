@@ -1,17 +1,17 @@
 import type { PluginTheme } from "@getpaseo/plugin";
-import React, { useMemo, useState } from "react";
-import { LayoutChangeEvent, ScrollView, StyleSheet, Text, View } from "react-native";
-import { parseFlowchart, type NodeShape } from "../shared/flowchart";
+import React from "react";
+import { StyleSheet, Text, View } from "react-native";
+import { parseFlowchart, type Flowchart, type NodeShape } from "../shared/flowchart";
 import { namesADiagram } from "../shared/segment";
 import {
-  fitScale,
   layoutFlowchart,
   layoutSequence,
-  overflowsAfterFit,
+  type FlowLayout,
   type LaidOutEdge,
   type LaidOutNode,
 } from "../shared/layout";
-import { parseSequence, type SeqEvent } from "../shared/sequence";
+import { parseSequence, type SeqEvent, type SequenceDiagram } from "../shared/sequence";
+import type { Size } from "../shared/zoom";
 
 /**
  * Draws Mermaid with plain Views.
@@ -20,56 +20,48 @@ import { parseSequence, type SeqEvent } from "../shared/sequence";
  * needs a DOM, so nothing can render the source directly. Every line here is a
  * positioned View: node boxes, one-and-a-half pixel edge segments, and
  * arrowheads made from a View with three transparent borders.
+ *
+ * Everything is drawn at the natural size of the layout. Fitting it to a row or
+ * a window, and zooming, is the viewer's job (viewer.tsx), so the drawing does
+ * not need to know where it is.
  */
 
 const ARROW = 5;
-/** Narrower than this is a measurement artefact, not a row anyone can read in. */
-const MIN_MEASURABLE = 120;
 
-export function Diagram({ source, theme, compact }: { source: string; theme: PluginTheme; compact: boolean }) {
-  const parsed = useMemo(() => {
-    const flow = parseFlowchart(source);
-    if (flow && flow.nodes.length > 0) return { kind: "flow" as const, layout: layoutFlowchart(flow), skipped: flow.skipped };
-    const sequence = parseSequence(source);
-    if (sequence && sequence.participants.length > 0) {
-      const box = layoutSequence(sequence.participants, sequence.events.length);
-      return { kind: "sequence" as const, diagram: sequence, size: { width: box.width, height: box.height } };
-    }
-    return { kind: "unsupported" as const };
-  }, [source]);
+export type ParsedDiagram =
+  | { kind: "flow"; layout: FlowLayout; skipped: Flowchart["skipped"] }
+  | { kind: "sequence"; diagram: SequenceDiagram; size: Size }
+  | { kind: "unsupported" };
 
-  if (parsed.kind === "unsupported") {
-    // Showing the source beats drawing a guess at what it meant.
-    return <Unsupported source={source} theme={theme} />;
+export type DrawableDiagram = Exclude<ParsedDiagram, { kind: "unsupported" }>;
+
+/** Reads the source as whichever diagram it names, laid out at natural size. */
+export function parseDiagram(source: string): ParsedDiagram {
+  const flow = parseFlowchart(source);
+  if (flow && flow.nodes.length > 0) return { kind: "flow", layout: layoutFlowchart(flow), skipped: flow.skipped };
+  const sequence = parseSequence(source);
+  if (sequence && sequence.participants.length > 0) {
+    const box = layoutSequence(sequence.participants, sequence.events.length);
+    return { kind: "sequence", diagram: sequence, size: { width: box.width, height: box.height } };
   }
+  return { kind: "unsupported" };
+}
 
-  const drawing =
-    parsed.kind === "flow" ? (
-      <FlowchartView layout={parsed.layout} theme={theme} />
-    ) : (
-      <SequenceView diagram={parsed.diagram} theme={theme} />
-    );
-  const size =
-    parsed.kind === "flow"
-      ? { width: parsed.layout.width, height: parsed.layout.height }
-      : parsed.size;
+/** The size the drawing was laid out at, before any fitting or zoom. */
+export function naturalSize(parsed: DrawableDiagram): Size {
+  return parsed.kind === "flow" ? { width: parsed.layout.width, height: parsed.layout.height } : parsed.size;
+}
 
-  return (
-    <View style={{ gap: 6 }}>
-      <Fit width={size.width} height={size.height} compact={compact}>
-        {drawing}
-      </Fit>
-      {parsed.kind === "flow" && parsed.skipped.length > 0 ? (
-        <Text style={{ color: theme.colors.foregroundMuted, fontSize: 11 }}>
-          {parsed.skipped.length} line{parsed.skipped.length === 1 ? "" : "s"} not drawn: subgraphs and styling are
-          not supported yet.
-        </Text>
-      ) : null}
-    </View>
+/** Draws a parsed diagram at its natural size; the caller scales and places it. */
+export function Drawing({ parsed, theme }: { parsed: DrawableDiagram; theme: PluginTheme }) {
+  return parsed.kind === "flow" ? (
+    <FlowchartView layout={parsed.layout} theme={theme} />
+  ) : (
+    <SequenceView diagram={parsed.diagram} theme={theme} />
   );
 }
 
-function Unsupported({ source, theme }: { source: string; theme: PluginTheme }) {
+export function Unsupported({ source, theme }: { source: string; theme: PluginTheme }) {
   // The item is claimed as soon as the fence opens, so most of the time this is a
   // diagram halfway through arriving rather than one this plugin cannot draw.
   // Saying "unsupported" about unfinished source would be a lie that flashes on
@@ -97,72 +89,6 @@ function Unsupported({ source, theme }: { source: string; theme: PluginTheme }) 
   );
 }
 
-/**
- * Draws its child at the size the row can actually give it.
- *
- * The natural size of a diagram is whatever its node labels happened to add up
- * to, which is no basis for how big it should appear. This measures the row,
- * scales to fit, grows small diagrams a little so they do not look lost, and
- * stops shrinking where the labels would stop being readable. Only past that
- * point does it scroll, and by then the height is known, so the ScrollView has
- * one and cannot collapse.
- */
-function Fit({
-  width,
-  height,
-  compact,
-  children,
-}: {
-  width: number;
-  height: number;
-  compact: boolean;
-  children: React.ReactNode;
-}) {
-  const [available, setAvailable] = useState(0);
-
-  const onLayout = (event: LayoutChangeEvent) => {
-    const measured = Math.round(event.nativeEvent.layout.width);
-    // A first pass can report a width the row does not really have, while the
-    // parent is still deriving its own size. Treating that as real is what made
-    // a freshly arrived diagram render narrow until something forced a reload.
-    if (measured < MIN_MEASURABLE) return;
-    if (measured !== available) setAvailable(measured);
-  };
-
-  const scale = fitScale(available, width);
-  const scrolls = overflowsAfterFit(available, width);
-  const box = { width: width * scale, height: height * scale };
-
-  const scaled = (
-    <View style={box}>
-      <View style={{ width, height, transform: [{ scale }], transformOrigin: "top left" }}>{children}</View>
-    </View>
-  );
-
-  return (
-    <View style={{ alignSelf: "stretch" }}>
-      {/*
-        The measurement happens on a probe, not on the container that holds the
-        drawing. Measuring the container would close a loop: its height comes
-        from the scale, the scale comes from the measurement, and a view whose
-        size depends on its own measurement can settle on a wrong value and then
-        never be laid out again. The probe is always the full width of the row
-        and never changes, so every change in the row reaches it.
-      */}
-      <View onLayout={onLayout} style={{ alignSelf: "stretch", height: 0 }} />
-      <View style={{ alignSelf: "stretch", height: box.height }}>
-        {scrolls ? (
-          <ScrollView horizontal showsHorizontalScrollIndicator={!compact} style={{ height: box.height }}>
-            {scaled}
-          </ScrollView>
-        ) : (
-          scaled
-        )}
-      </View>
-    </View>
-  );
-}
-
 /* -------------------------------------------------------------------------- */
 /* Flowchart                                                                    */
 /* -------------------------------------------------------------------------- */
@@ -174,7 +100,7 @@ function radiusFor(shape: NodeShape, node: LaidOutNode): number {
   return 4;
 }
 
-function FlowchartView({ layout, theme }: { layout: ReturnType<typeof layoutFlowchart>; theme: PluginTheme }) {
+function FlowchartView({ layout, theme }: { layout: FlowLayout; theme: PluginTheme }) {
   return (
     <View style={{ width: layout.width, height: layout.height, paddingBottom: 4 }}>
       {layout.edges.map((edge, index) => (
@@ -344,7 +270,7 @@ function SequenceView({
   diagram,
   theme,
 }: {
-  diagram: NonNullable<ReturnType<typeof parseSequence>>;
+  diagram: SequenceDiagram;
   theme: PluginTheme;
 }) {
   const layout = layoutSequence(diagram.participants, diagram.events.length);

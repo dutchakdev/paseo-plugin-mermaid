@@ -194,6 +194,12 @@ describe("fitScale", () => {
     expect(overflowsAfterFit(900, 1200)).toBe(false);
     expect(overflowsAfterFit(900, 300)).toBe(false);
   });
+
+  it("scrolls again once the reader zooms a fitted drawing past the row", () => {
+    expect(overflowsAfterFit(900, 1200, 1)).toBe(false);
+    expect(overflowsAfterFit(900, 1200, 1.25)).toBe(true);
+    expect(overflowsAfterFit(100, 2000, 0.5)).toBe(true);
+  });
 });
 
 describe("edges that skip a layer", () => {

@@ -7,7 +7,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/Paseo-0.8.x%20%7C%200.9.x-3987e5" alt="Supports Paseo 0.8.x and 0.9.x, including betas">
-  <img src="https://img.shields.io/badge/tests-91-199e70" alt="91 tests">
+  <img src="https://img.shields.io/badge/tests-110-199e70" alt="110 tests">
   <img src="https://img.shields.io/badge/dependencies-none-c98500" alt="No runtime dependencies">
   <img src="https://img.shields.io/badge/license-MIT-9aa1a6" alt="MIT licensed">
 </p>
@@ -22,8 +22,9 @@ Built on the plugin timeline API introduced in Paseo 0.8.
 
 Paseo draws Mermaid itself too, in an iframe inside a zoomable box with a
 fullscreen viewer. This plugin draws it inline instead: readable at the width of
-the message, from the first streamed line, with no box to expand and no zoom to
-adjust. If you would rather have the zoom, you do not need this plugin.
+the message, from the first streamed line, with the same controls above it for
+the times the fitted drawing is not enough: zoom, fit to view, pop out, and the
+source on demand.
 
 ## Install
 
@@ -70,6 +71,25 @@ Not supported yet: subgraphs, `style`/`classDef` directives, and the diagram typ
 beyond these two. Unrecognised lines are counted and reported under the drawing
 rather than dropped, and a diagram the parser cannot read at all falls back to
 showing its source.
+
+## Controls
+
+Every drawing carries a toolbar: `Zoom out · 100% · Zoom in · Fit to view · Pop out`
+on the left and `Show code` on the right. The zoom model is the one Paseo's own
+diagram box uses, so a reader who knows one knows the other.
+
+| Control | What it does |
+| ------- | ------------ |
+| **Zoom in / out** | Steps by ×1.25 and ÷1.25 between 25% and 400%. A button goes quiet at its limit. |
+| **100%** | The zoom relative to the fitted drawing. Fitted means scaled to the width of the row, grown a little when small, and never shrunk past the point where labels stop being readable. |
+| **Fit to view** | In the row: show the whole drawing across the row, even below the readability floor, for the wide ones that would otherwise scroll sideways. It never grows a drawing past 100%. In the pop-out: fit both axes of the window. Quiet once it is there. |
+| **Pop out** | Opens the drawing in a host modal, fitted to the window on both axes, with the same toolbar. Zoomed past the window, it scrolls on both axes. |
+| **Show code** | Swaps the drawing for its Mermaid source and quiets the zoom controls until you switch back. |
+
+Zooming in the row makes the row taller and, past its width, scrolls it
+sideways; the transcript scrolls vertically as it always does, so nothing is
+clipped. On phones and narrow windows the button labels drop and the icons and
+the percent stay.
 
 ## How it works
 
@@ -121,21 +141,24 @@ parsed so far.
 labels happened to add up to, which is no basis for how big it should appear. The
 row is measured, the drawing is scaled to fit, small diagrams are grown a little
 so they do not look lost, and shrinking stops at the point where labels would
-stop being readable. Only past that does it scroll sideways.
+stop being readable. Only past that does it scroll sideways. The toolbar's zoom
+multiplies that fit, which is why 100% is the fit itself and not the natural size.
 
 ## Development
 
 ```sh
 npm run typecheck
-npm test                 # 91 tests
+npm test                 # 110 tests
 paseo plugin reload mermaid
 ```
 
-The parsers, the layout and the transform are pure functions with no runtime
-dependencies, and that is where the tests are: bracket shapes, operator
-precedence (`-.->` must never read as `-.-` plus a stray `>`), cycles in a
-flowchart, node overlap, arrow direction, and the JSON round trip Paseo performs
-on item data before rendering.
+The parsers, the layout, the zoom model and the transform are pure functions
+with no runtime dependencies, and that is where the tests are: bracket shapes,
+operator precedence (`-.->` must never read as `-.-` plus a stray `>`), cycles in
+a flowchart, node overlap, arrow direction, zoom steps that land back on 100%,
+which toolbar controls are live, and the JSON round trip Paseo performs on item
+data before rendering. The Views themselves are checked by `npm run typecheck`
+and by reloading the plugin.
 
 | File | Role |
 | ---- | ---- |
@@ -144,8 +167,11 @@ on item data before rendering.
 | `shared/sequence.ts` | sequence diagram parser |
 | `shared/layout.ts` | layered layout, orthogonal edge routing, column layout |
 | `shared/markdown.ts` | the Markdown subset used for prose |
+| `shared/zoom.ts` | zoom steps, fit to view, and which controls are live |
 | `shared/transform.ts` | the timeline transform itself |
-| `client/diagram.tsx` | drawing, in Views |
+| `client/diagram.tsx` | drawing, in Views, at natural size |
+| `client/viewer.tsx` | fitting, zoom and the source toggle, in the row and in the pop-out |
+| `client/toolbar.tsx` | the toolbar |
 | `client/markdown.tsx` | prose rendering |
 | `client/item.tsx` | the two timeline renderers |
 | `index.client.tsx` | registers the transformers and renderers; the only entry |

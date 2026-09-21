@@ -1,8 +1,8 @@
 import type { PluginTimelineItemProps } from "@getpaseo/plugin/client";
 import React from "react";
 import { View } from "react-native";
-import { Diagram } from "./diagram";
 import { Markdown } from "./markdown";
+import { DiagramViewer } from "./viewer";
 
 export interface TextData {
   text: string;
@@ -19,7 +19,7 @@ export function TextItem({ item, theme, layout }: PluginTimelineItemProps<TextDa
 export function DiagramItem({ item, theme, layout }: PluginTimelineItemProps<DiagramData>) {
   return (
     <View style={{ paddingVertical: 4 }}>
-      <Diagram source={item.data.source} theme={theme} compact={layout.compact} />
+      <DiagramViewer source={item.data.source} theme={theme} compact={layout.compact} />
     </View>
   );
 }
