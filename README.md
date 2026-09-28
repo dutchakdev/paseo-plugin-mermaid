@@ -6,7 +6,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Paseo-0.8.x%20%7C%200.9.x-3987e5" alt="Supports Paseo 0.8.x and 0.9.x, including betas">
+  <img src="https://img.shields.io/badge/Paseo-0.8.x%20%7C%200.9.x%20%7C%200.10.x-3987e5" alt="Supports Paseo 0.8.x, 0.9.x and 0.10.x, including betas">
   <img src="https://img.shields.io/badge/tests-110-199e70" alt="110 tests">
   <img src="https://img.shields.io/badge/dependencies-none-c98500" alt="No runtime dependencies">
   <img src="https://img.shields.io/badge/license-MIT-9aa1a6" alt="MIT licensed">
@@ -34,12 +34,12 @@ paseo plugin ls          # expect: running
 ```
 
 `plugin add` tracks the default branch, so `paseo plugin update mermaid` pulls
-later fixes. The plugin supports **Paseo 0.8.x and 0.9.x, including betas**, on both
+later fixes. The plugin supports **Paseo 0.8.x, 0.9.x and 0.10.x, including betas**, on both
 sides: the daemon compiles it, and the app checks its declared version range.
 It has no server entry, so it starts no daemon process.
 
-The manifest remains `>=0.8.0`, which already admits 0.9.x. Paseo also checks a
-prerelease's stable version core, so `0.9.0-beta.2` satisfies this range; see
+The manifest remains `>=0.8.0`, which already admits 0.9.x and 0.10.x. Paseo also checks a
+prerelease's stable version core, so `0.10.0-beta.1` satisfies this range; see
 [version requirements](https://paseo.sh/docs/plugins/reference#requirements).
 The development SDK stays pinned to 0.8.0; Paseo supplies the runtime modules.
 
