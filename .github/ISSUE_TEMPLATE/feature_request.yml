@@ -1,0 +1,23 @@
+name: Feature request
+description: Describe a user problem and the behavior that would solve it.
+title: "[Feature]: "
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+      description: Describe the workflow and where the current behavior falls short.
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Desired behavior
+      description: Explain what should happen from the user's point of view.
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Optional. Include the client type and daemon platform if relevant.

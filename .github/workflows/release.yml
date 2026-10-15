@@ -1,0 +1,187 @@
+name: Release
+
+on:
+  push:
+    tags: ['v[0-9]+.[0-9]+.[0-9]+*']
+  # To retry, run the workflow from the release tag. Provenance records the ref the run started from.
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+env:
+  TAG: ${{ github.ref_name }}
+
+jobs:
+  verify:
+    name: Verify and pack
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    outputs:
+      name: ${{ steps.plan.outputs.name }}
+      version: ${{ steps.plan.outputs.version }}
+      dist-tag: ${{ steps.plan.outputs.dist-tag }}
+      publish: ${{ steps.plan.outputs.publish }}
+      sha256: ${{ steps.pack.outputs.sha256 }}
+      artifact-id: ${{ steps.upload.outputs.artifact-id }}
+    steps:
+      - name: Check that the run is for a release tag
+        env:
+          REF_TYPE: ${{ github.ref_type }}
+        run: |
+          if [ "$REF_TYPE" != tag ] || ! [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::Run this workflow from a release tag such as v1.2.3, not from $REF_TYPE $TAG."
+            exit 1
+          fi
+      - name: Check out tag
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # History of main, to prove the tag is on it.
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .node-version
+      - name: Install dependencies
+        run: npm ci --ignore-scripts --legacy-peer-deps
+      - name: Check tag, version, changelog and npm
+        id: plan
+        run: node scripts/release.mjs verify "$TAG"
+      - name: Pack
+        id: pack
+        run: |
+          mkdir dist
+          npm pack --pack-destination dist
+          echo "sha256=$(sha256sum dist/*.tgz | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+      - name: Check tarball
+        run: node scripts/check-package.mjs dist/*.tgz
+      - name: Write release notes
+        env:
+          VERSION: ${{ steps.plan.outputs.version }}
+        run: node scripts/release.mjs notes "$VERSION" > dist/notes.md
+      - name: Upload release files
+        id: upload
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release
+          path: dist/
+          if-no-files-found: error
+          retention-days: 7
+
+  test:
+    name: Node ${{ matrix.node }} / ${{ matrix.os }}
+    needs: verify
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: true
+      matrix:
+        os: [macos-15, ubuntu-24.04]
+        node: ['22.12.0', '24']
+    steps:
+      - name: Check out tag
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Check
+        uses: ./.github/actions/check
+        with:
+          node-version: ${{ matrix.node }}
+
+  publish:
+    name: Publish to npm
+    needs: [verify, test]
+    if: needs.verify.outputs.publish == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    # The npm trusted publisher names this environment; restrict it to v* tags in the repository settings.
+    environment: npm
+    permissions:
+      id-token: write
+    steps:
+      - name: Download release files
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          artifact-ids: ${{ needs.verify.outputs.artifact-id }}
+          path: dist
+      # The test jobs run far more third-party code than verify; publish only the bytes verify packed.
+      - name: Check tarball digest
+        env:
+          SHA256: ${{ needs.verify.outputs.sha256 }}
+        run: |
+          files=(dist/*.tgz)
+          [ "${#files[@]}" -eq 1 ]
+          echo "$SHA256  ${files[0]}" | sha256sum --check --strict -
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '24'
+      - name: Check npm supports trusted publishing
+        run: |
+          npm_version=$(npm --version)
+          if [ "$(printf '%s\n' 11.5.1 "$npm_version" | sort -V | head -n1)" != 11.5.1 ]; then
+            echo "::error::npm $npm_version is older than 11.5.1, the first release with trusted publishing."
+            exit 1
+          fi
+      # A bare dist/… path would be read as a GitHub shorthand. --provenance fails the run instead of skipping it.
+      - name: Publish
+        env:
+          DIST_TAG: ${{ needs.verify.outputs.dist-tag }}
+        run: npm publish ./dist/*.tgz --tag "$DIST_TAG" --access public --provenance
+
+  github-release:
+    name: GitHub release
+    needs: [verify, test, publish]
+    if: ${{ !cancelled() && needs.verify.result == 'success' && needs.test.result == 'success' && needs.publish.result != 'failure' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Download release files
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          artifact-ids: ${{ needs.verify.outputs.artifact-id }}
+          path: dist
+      - name: Check tarball digest
+        env:
+          SHA256: ${{ needs.verify.outputs.sha256 }}
+        run: |
+          files=(dist/*.tgz)
+          [ "${#files[@]}" -eq 1 ]
+          echo "$SHA256  ${files[0]}" | sha256sum --check --strict -
+      # A re-run repacks, and the bytes can differ; attach what npm actually serves.
+      - name: Use the npm tarball for a version published earlier
+        if: needs.verify.outputs.publish != 'true'
+        env:
+          NAME: ${{ needs.verify.outputs.name }}
+          VERSION: ${{ needs.verify.outputs.version }}
+        run: |
+          rm dist/*.tgz
+          npm pack "$NAME@$VERSION" --pack-destination dist
+      - name: Create the release or attach the tarball
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          DIST_TAG: ${{ needs.verify.outputs.dist-tag }}
+        run: |
+          tarball=$(ls dist/*.tgz)
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            if gh release view "$TAG" --json assets --jq '.assets[].name' | grep -qxF "$(basename "$tarball")"; then
+              echo "$TAG already has $(basename "$tarball")."
+            else
+              gh release upload "$TAG" "$tarball"
+            fi
+          else
+            prerelease=()
+            if [ "$DIST_TAG" = next ]; then prerelease=(--prerelease); fi
+            gh release create "$TAG" "$tarball" --verify-tag --title "$TAG" --notes-file dist/notes.md "${prerelease[@]}"
+          fi
