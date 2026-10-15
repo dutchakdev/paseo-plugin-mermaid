@@ -1,0 +1,16 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      paseo-sdk:
+        patterns:
+          - '@getpaseo/*'
+  - package-ecosystem: github-actions
+    # `/` covers the workflows only; the composite action needs its own entry.
+    directories: ['/', '/.github/actions/*']
+    schedule:
+      interval: monthly

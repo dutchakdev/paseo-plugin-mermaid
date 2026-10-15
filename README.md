@@ -148,8 +148,7 @@ multiplies that fit, which is why 100% is the fit itself and not the natural siz
 ## Development
 
 ```sh
-npm run typecheck
-npm test                 # 110 tests
+npm run check            # typecheck, then the tests
 paseo plugin reload mermaid
 ```
 
@@ -176,6 +175,9 @@ and by reloading the plugin.
 | `client/markdown.tsx` | prose rendering |
 | `client/item.tsx` | the two timeline renderers |
 | `index.client.tsx` | registers the transformers and renderers; the only entry |
+
+Releases are cut from tags by GitHub Actions; see [CONTRIBUTING.md](CONTRIBUTING.md)
+for the flow and [CHANGELOG.md](CHANGELOG.md) for what changed.
 
 ## License
 

@@ -1,0 +1,45 @@
+name: Bug report
+description: Report a diagram that draws wrong, fails to draw, or breaks the message around it.
+title: "[Bug]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Include enough detail to reproduce the problem. Redact private paths, host names and tokens from logs and screenshots.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What happened?
+      description: Describe the observed problem and any visible error.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Include versions where available. Do not include host addresses.
+      value: |
+        Plugin version or revision:
+        Paseo daemon version:
+        Paseo client type and version (desktop / web / native mobile):
+        The diagram source (paste it below as a code block):
+        Installation source (directory / Git / npm):
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Logs or screenshots
+      description: Optional. `paseo plugin logs mermaid` shows the daemon side.
