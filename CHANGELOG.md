@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- Paseo 0.12 checked, including its betas: a 0.12 daemon loads the plugin, and the plugin typechecks and passes its tests against the 0.12 SDK. The plugin itself did not need changes.
+
 ## 0.2.1 - 2026-10-15
 
 ### Changed
