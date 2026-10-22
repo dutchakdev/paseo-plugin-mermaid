@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- Paseo 0.13 checked, including its betas: a 0.13 daemon loads the plugin, and the plugin typechecks and passes its tests against the 0.13 SDK. The plugin keeps importing UI from `@getpaseo/plugin/client/react-native`, which 0.13 deprecates in favor of `client/ui` but still serves; only the old path works on every supported app from 0.8.
+
 ## 0.2.2 - 2026-10-17
 
 ### Changed
