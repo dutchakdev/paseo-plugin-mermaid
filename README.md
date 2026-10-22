@@ -149,6 +149,8 @@ multiplies that fit, which is why 100% is the fit itself and not the natural siz
 
 ```sh
 npm run check            # typecheck, then the tests
+npm run preview          # regenerates docs/preview.svg from the parser and layout
+./scripts/preview-png.sh # renders it to docs/preview.png for the plugin directory
 paseo plugin reload mermaid
 ```
 
