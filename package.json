@@ -1,6 +1,6 @@
 {
   "name": "paseo-plugin-mermaid",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "Render Mermaid diagrams inside the Paseo chat timeline",
   "license": "MIT",
   "author": "dutchakdev",
