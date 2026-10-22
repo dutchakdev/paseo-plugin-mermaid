@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- The README opens with a PNG preview and a short summary, and its install section lists
+  the plugin directory, npm and GitHub sources by Paseo version.
+
 ## 0.2.3 - 2026-10-22
 
 ### Changed
