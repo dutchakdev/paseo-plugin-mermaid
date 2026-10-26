@@ -20,6 +20,8 @@ export function inspectPackage({ files, manifest, overview, sourceManifest }) {
   for (const file of REQUIRED) if (!files.includes(file)) problems.push(`missing ${file}`);
   for (const file of files) if (FORBIDDEN.some((prefix) => file.startsWith(prefix))) problems.push(`unexpected ${file}`);
   if (JSON.stringify(manifest) !== JSON.stringify(sourceManifest)) problems.push("paseo-plugin.json differs from the source manifest");
+  // The plugin directory resolves the manifest icon inside the tarball.
+  if (manifest?.icon && !files.includes(manifest.icon)) problems.push(`missing ${manifest.icon}, the manifest icon`);
   if (overview !== undefined && OVERVIEW_COMMANDS.test(overview)) problems.push("OVERVIEW.md contains an install command");
   return problems;
 }

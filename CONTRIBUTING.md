@@ -12,7 +12,7 @@ npm run check        # typecheck, then the full test suite
 npm run preview      # regenerates docs/preview.svg from the real parser and layout
 ```
 
-SDK development dependencies stay pinned to 0.8.0, so typechecking proves the plugin uses only the oldest supported API. Client code must not import `@getpaseo/client` or `@getpaseo/protocol` directly, even for types: they are development dependencies and are absent from an npm installation.
+SDK development dependencies stay pinned to 0.8.0, so typechecking proves the plugin uses only the 0.8 API, which every supported release still provides. Client code must not import `@getpaseo/client` or `@getpaseo/protocol` directly, even for types: they are development dependencies and are absent from an npm installation.
 
 ## Changelog and releases
 

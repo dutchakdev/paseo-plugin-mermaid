@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#26272D"/>
+      <stop offset="1" stop-color="#141417"/>
+    </linearGradient>
+    <linearGradient id="node" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F4A27E"/>
+      <stop offset="1" stop-color="#D9714D"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <!-- Flowchart edges: one start node branching to two nodes -->
+  <path d="M256 172 V250 M152 296 V250 H360 V284" fill="none" stroke="#737683" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M128 296 L176 296 L152 330Z M336 284 L384 284 L360 318Z" fill="#737683" stroke="#737683" stroke-width="6" stroke-linejoin="round"/>
+  <!-- Start node -->
+  <rect x="168" y="88" width="176" height="84" rx="24" fill="#F5F5F7"/>
+  <!-- Process node -->
+  <rect x="84" y="334" width="136" height="80" rx="22" fill="url(#node)"/>
+  <!-- Decision node -->
+  <path d="M360 318 L420 374 L360 430 L300 374Z" fill="#F5F5F7" stroke="#F5F5F7" stroke-width="10" stroke-linejoin="round"/>
+</svg>
