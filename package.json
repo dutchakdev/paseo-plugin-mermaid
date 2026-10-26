@@ -41,6 +41,7 @@
   "files": [
     "paseo-plugin.json",
     "OVERVIEW.md",
+    "assets/icon.png",
     "index.client.tsx",
     "client/",
     "shared/"

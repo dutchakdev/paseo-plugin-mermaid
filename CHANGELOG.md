@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- A plugin icon, a small flowchart, which the Paseo plugin directory shows on the listing. The manifest declares it as `assets/icon.png`, and the package check fails when the tarball lacks the icon the manifest names.
+
+### Changed
+
+- Requires Paseo 0.11 or newer, on the daemon and in the app. Paseo 0.8 to 0.10 and the 0.11.0 betas refuse a manifest with an `icon` field. Those versions can stay on 0.2.4: `paseo plugin add dutchakdev/paseo-plugin-mermaid --ref v0.2.4`.
+
 ## 0.2.4 - 2026-10-22
 
 ### Changed

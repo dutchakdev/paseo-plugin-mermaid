@@ -7,7 +7,7 @@ import { inspectPackage } from "../scripts/check-package.mjs";
 const read = (name: string) => readFileSync(fileURLToPath(new URL(`../${name}`, import.meta.url)), "utf8");
 const sourceManifest = JSON.parse(read("paseo-plugin.json"));
 const files = [
-  "package.json", "paseo-plugin.json", "OVERVIEW.md", "README.md", "LICENSE",
+  "package.json", "paseo-plugin.json", "OVERVIEW.md", "README.md", "LICENSE", "assets/icon.png",
   "index.client.tsx", "client/diagram.tsx", "shared/flowchart.ts",
 ];
 const inspect = (overrides: Record<string, unknown>) => inspectPackage({ files, manifest: sourceManifest, overview: read("OVERVIEW.md"), sourceManifest, ...overrides });
@@ -23,7 +23,11 @@ describe("packed tarball", () => {
   });
 
   it("rejects a manifest that differs from the source", () => {
-    expect(inspect({ manifest: { ...sourceManifest, requirements: { paseo: ">=0.11.0" } } })).toEqual(["paseo-plugin.json differs from the source manifest"]);
+    expect(inspect({ manifest: { ...sourceManifest, requirements: { paseo: ">=0.12.0" } } })).toEqual(["paseo-plugin.json differs from the source manifest"]);
+  });
+
+  it("requires the icon the manifest declares, which the plugin directory reads from the tarball", () => {
+    expect(inspect({ files: files.filter((file) => file !== "assets/icon.png") })).toEqual(["missing assets/icon.png, the manifest icon"]);
   });
 
   it("rejects an overview with an install command, which the plugin directory refuses", () => {

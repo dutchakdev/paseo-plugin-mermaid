@@ -1,3 +1,5 @@
+<p align="center"><img src="assets/icon.png" width="88" alt=""></p>
+
 <h1 align="center">paseo-plugin-mermaid</h1>
 
 <p align="center">
@@ -8,7 +10,7 @@
 <p align="center">
   <a href="https://github.com/dutchakdev/paseo-plugin-mermaid/actions/workflows/ci.yml"><img src="https://github.com/dutchakdev/paseo-plugin-mermaid/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
   <a href="https://www.npmjs.com/package/paseo-plugin-mermaid"><img src="https://img.shields.io/npm/v/paseo-plugin-mermaid" alt="npm"></a>
-  <img src="https://img.shields.io/badge/Paseo-0.8.x%20%E2%80%93%200.13.x-3987e5" alt="Supports Paseo 0.8.x through 0.13.x, including betas">
+  <img src="https://img.shields.io/badge/Paseo-0.11.x%20%E2%80%93%200.13.x-3987e5" alt="Supports Paseo 0.11.x through 0.13.x, including betas">
   <img src="https://img.shields.io/badge/dependencies-none-c98500" alt="No runtime dependencies">
   <img src="https://img.shields.io/badge/license-MIT-9aa1a6" alt="MIT licensed">
 </p>
@@ -42,22 +44,25 @@ plugins**. Then pick the source that matches your Paseo:
 | Paseo | Source | Command |
 | ----- | ------ | ------- |
 | 0.11 and newer | [Plugin directory](https://paseo.sh/plugins/dutchakdev/mermaid), the reviewed version | `paseo plugin add dutchakdev/mermaid` |
-| 0.9 and newer | npm, the newest release before the directory approves it | `paseo plugin install npm:paseo-plugin-mermaid` |
-| 0.8 | GitHub | `paseo plugin add dutchakdev/paseo-plugin-mermaid` |
+| 0.11 and newer | npm, the newest release before the directory approves it | `paseo plugin install npm:paseo-plugin-mermaid` |
+| 0.8 to 0.10, 0.11.0 betas | GitHub, release 0.2.4, the last one for these versions | `paseo plugin add dutchakdev/paseo-plugin-mermaid --ref v0.2.4` |
 
 `paseo plugin ls` should then show `mermaid` as `running`, and `paseo plugin update mermaid`
 pulls later releases from the same source. From Paseo 0.11 a bare `owner/name` names a
 directory entry, so a GitHub source there needs the `git:` prefix:
 `git:dutchakdev/paseo-plugin-mermaid`.
 
-The plugin supports **Paseo 0.8.x through 0.13.x, including betas**, on both
+The plugin supports **Paseo 0.11.x through 0.13.x, including betas**, on both
 sides: the daemon compiles it, and the app checks its declared version range.
 It has no server entry, so it starts no daemon process.
 
-The manifest remains `>=0.8.0`, which already admits 0.9.x through 0.13.x. Paseo also checks a
-prerelease's stable version core, so `0.13.0-beta.1` satisfies this range; see
+The manifest asks for `>=0.11.0` because it declares the icon shown in the plugin
+directory, and Paseo 0.8 to 0.10 refuse a manifest with a field they do not know.
+Paseo also checks a prerelease's stable version core, so `0.13.0-beta.1` satisfies
+this range. The 0.11.0 betas pass that check but predate the `icon` field, so they
+refuse the manifest as well and need the release named in the install table; see
 [version requirements](https://paseo.sh/docs/plugins/reference#requirements).
-The development SDK stays pinned to 0.8.0; Paseo supplies the runtime modules.
+The development SDK stays pinned to 0.8.0, an API every supported release still provides; Paseo supplies the runtime modules.
 
 To work on it locally instead:
 
