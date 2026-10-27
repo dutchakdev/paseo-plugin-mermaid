@@ -4,4 +4,4 @@ Diagrams are drawn from the message text when the message renders, and drawing s
 
 Each diagram has a toolbar to zoom, fit to view, pop out to a larger view, and show the code. Zoom matches Paseo's own diagram viewer: 100% is the drawing fitted to the row.
 
-The plugin runs entirely in the Paseo app on desktop and mobile, works with Paseo 0.11 to 0.13, has no settings, and needs no additional setup.
+The plugin runs entirely in the Paseo app on desktop and mobile, works with Paseo 0.11 to 0.14, has no settings, and needs no additional setup.

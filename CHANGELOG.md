@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- Paseo 0.14 checked, including its betas: a 0.14 daemon loads the plugin, and the plugin typechecks and passes its tests against the 0.14 SDK. 0.14 changes only the server half of the SDK and leaves the client entries as they were, so this client-only plugin did not need changes.
+
 ## 0.3.0 - 2026-10-26
 
 ### Added
