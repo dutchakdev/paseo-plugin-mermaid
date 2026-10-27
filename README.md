@@ -10,7 +10,7 @@
 <p align="center">
   <a href="https://github.com/dutchakdev/paseo-plugin-mermaid/actions/workflows/ci.yml"><img src="https://github.com/dutchakdev/paseo-plugin-mermaid/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
   <a href="https://www.npmjs.com/package/paseo-plugin-mermaid"><img src="https://img.shields.io/npm/v/paseo-plugin-mermaid" alt="npm"></a>
-  <img src="https://img.shields.io/badge/Paseo-0.11.x%20%E2%80%93%200.13.x-3987e5" alt="Supports Paseo 0.11.x through 0.13.x, including betas">
+  <img src="https://img.shields.io/badge/Paseo-0.11.x%20%E2%80%93%200.14.x-3987e5" alt="Supports Paseo 0.11.x through 0.14.x, including betas">
   <img src="https://img.shields.io/badge/dependencies-none-c98500" alt="No runtime dependencies">
   <img src="https://img.shields.io/badge/license-MIT-9aa1a6" alt="MIT licensed">
 </p>
@@ -52,13 +52,13 @@ pulls later releases from the same source. From Paseo 0.11 a bare `owner/name` n
 directory entry, so a GitHub source there needs the `git:` prefix:
 `git:dutchakdev/paseo-plugin-mermaid`.
 
-The plugin supports **Paseo 0.11.x through 0.13.x, including betas**, on both
+The plugin supports **Paseo 0.11.x through 0.14.x, including betas**, on both
 sides: the daemon compiles it, and the app checks its declared version range.
 It has no server entry, so it starts no daemon process.
 
 The manifest asks for `>=0.11.0` because it declares the icon shown in the plugin
 directory, and Paseo 0.8 to 0.10 refuse a manifest with a field they do not know.
-Paseo also checks a prerelease's stable version core, so `0.13.0-beta.1` satisfies
+Paseo also checks a prerelease's stable version core, so `0.14.0-beta.1` satisfies
 this range. The 0.11.0 betas pass that check but predate the `icon` field, so they
 refuse the manifest as well and need the release named in the install table; see
 [version requirements](https://paseo.sh/docs/plugins/reference#requirements).
