@@ -69,21 +69,22 @@ describe("semantic versions", () => {
 });
 
 describe("planning a tagged release", () => {
-  const released = releaseChangelog(unreleased("### Added\n\n- A feature."), "0.4.0", "2026-12-01");
-  const plan = (overrides: Record<string, unknown>) => planRelease({ tag: "v0.4.0", packageVersion: "0.4.0", changelog: released, published: ["0.1.0", "0.2.0"], ...overrides });
+  // Far past the real history, so releasing a version never collides with this fixture.
+  const released = releaseChangelog(unreleased("### Added\n\n- A feature."), "9.0.0", "2026-12-01");
+  const plan = (overrides: Record<string, unknown>) => planRelease({ tag: "v9.0.0", packageVersion: "9.0.0", changelog: released, published: ["0.1.0", "0.2.0"], ...overrides });
 
   it("publishes a new version under the matching dist-tag", () => {
-    expect(plan({})).toEqual({ version: "0.4.0", distTag: "latest", publish: true });
+    expect(plan({})).toEqual({ version: "9.0.0", distTag: "latest", publish: true });
     expect(plan({ published: [] })).toMatchObject({ publish: true });
   });
 
   it("finishes a re-run without publishing the same version again", () => {
-    expect(plan({ published: ["0.2.0", "0.4.0"] })).toEqual({ version: "0.4.0", distTag: "latest", publish: false });
+    expect(plan({ published: ["0.2.0", "9.0.0"] })).toEqual({ version: "9.0.0", distTag: "latest", publish: false });
   });
 
   it("refuses a mismatched tag, an undated section, and a version older than npm's newest", () => {
-    expect(() => plan({ tag: "v0.4.1" })).toThrow("does not match package.json version 0.4.0");
-    expect(() => plan({ changelog: unreleased("- A feature.").replace("## Unreleased", "## 0.4.0") })).toThrow("dated");
-    expect(() => plan({ published: ["0.5.0-beta.1"] })).toThrow("not newer than 0.5.0-beta.1");
+    expect(() => plan({ tag: "v9.0.1" })).toThrow("does not match package.json version 9.0.0");
+    expect(() => plan({ changelog: unreleased("- A feature.").replace("## Unreleased", "## 9.0.0") })).toThrow("dated");
+    expect(() => plan({ published: ["9.1.0-beta.1"] })).toThrow("not newer than 9.1.0-beta.1");
   });
 });
