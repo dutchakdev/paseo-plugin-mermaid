@@ -1,0 +1,20 @@
+flowchart LR
+  subgraph client["Paseo app — client/"]
+    S["status: KPI tiles · charts · cleanup · processes"]
+    V["charts: bars, stacks, meters (Views only)"]
+  end
+  subgraph shared["shared/"]
+    Z["Zod contracts"]
+    P["validated palette + geometry"]
+  end
+  subgraph server["Daemon subprocess — server/"]
+    M["metrics + rolling history"]
+    C["cleanup"]
+    R["processes"]
+  end
+  OS["vm_stat · df · pmset · ps · du · fs.rm · kill"]
+
+  S --> V --> P
+  S -- "useRpc(contract, input)" --> Z
+  Z -- "validated both ways" --> M & C & R
+  M & C & R --> OS

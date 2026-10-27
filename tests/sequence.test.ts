@@ -43,6 +43,12 @@ describe("parseSequence", () => {
     expect(note).toMatchObject({ over: ["U", "S"], text: "handshake done" });
   });
 
+  it("reports front matter before the header as skipped, since its title is not drawn", () => {
+    const diagram = parseSequence("---\ntitle: Login\n---\nsequenceDiagram\n  A->>B: hi");
+    expect(diagram?.skipped).toEqual(["---", "title: Login", "---"]);
+    expect(diagram?.events).toHaveLength(1);
+  });
+
   it("keeps messages inside a loop and reports the framing as skipped", () => {
     const diagram = parseSequence(DIAGRAM);
     expect(diagram?.events.filter((event) => event.kind === "message")).toHaveLength(3);

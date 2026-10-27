@@ -8,7 +8,7 @@
 
 export type Segment =
   | { kind: "text"; text: string }
-  | { kind: "mermaid"; source: string };
+  | { kind: "mermaid"; source: string; open: boolean };
 
 const FENCE = /^[ \t]*(`{3,}|~{3,})[ \t]*([^\s`~]*)[ \t]*$/;
 
@@ -50,7 +50,7 @@ export function segmentMessage(text: string): Segment[] {
     if (match && match[1][0] === fence[0] && match[1].length >= fence.length && match[2] === "") {
       if (language === "mermaid") {
         flushProse();
-        segments.push({ kind: "mermaid", source: body.join("\n").trim() });
+        segments.push({ kind: "mermaid", source: body.join("\n").trim(), open: false });
       } else {
         prose.push(`${fence}${language}`, ...body, fence);
       }
@@ -71,24 +71,13 @@ export function segmentMessage(text: string): Segment[] {
   if (fence !== null) {
     if (language === "mermaid") {
       flushProse();
-      segments.push({ kind: "mermaid", source: body.join("\n").trim() });
+      segments.push({ kind: "mermaid", source: body.join("\n").trim(), open: true });
     } else {
       prose.push(`${fence}${language}`, ...body);
     }
   }
   flushProse();
   return segments;
-}
-
-/**
- * True when the source already names a diagram this plugin draws.
- *
- * Half-arrived source parses to nothing, and complaining that it is unsupported
- * would be wrong: it is unfinished, not unsupported.
- */
-export function namesADiagram(source: string): boolean {
-  const first = source.split("\n").find((line) => line.trim().length > 0) ?? "";
-  return /^(flowchart|graph|sequenceDiagram)\b/.test(first.trim());
 }
 
 /** True when the message is worth taking over at all. */

@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- On Paseo 0.13 and newer, `.mmd` and `.mermaid` files open in the file tab as a diagram, with the same toolbar, and redraw when the file changes on disk. A diagram the plugin does not draw in full is rendered there by Paseo.
+
+### Changed
+
+- A message with a diagram the plugin cannot draw in full is left to Paseo's own Mermaid renderer instead of being drawn with lines missing or shown as source. That covers other diagram types, subgraphs, `style` and `classDef` lines, `A & B` edge targets, sequence blocks such as `loop`, and front matter. While a diagram streams in, only finished lines count, so a half-typed line never hands it over; a diagram that turns out to need Paseo switches renderer once.
+- On Paseo 0.13 and newer, the text around a diagram is rendered with Paseo's own Markdown, so links, tables and highlighted code look as they do in the rest of the chat. Paseo 0.11 and 0.12 keep the plugin's renderer.
+
+### Removed
+
+- The "lines not drawn" note under a flowchart and the "Showing the source instead" notice: those diagrams now go to Paseo.
+
 ## 0.3.1 - 2026-10-27
 
 ### Changed

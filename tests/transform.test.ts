@@ -35,6 +35,22 @@ describe("split", () => {
     expect(result?.items.filter((item) => item.kind === DIAGRAM_KIND)).toHaveLength(2);
   });
 
+  it("leaves a message to Paseo when a diagram in it has lines the plugin would not draw", () => {
+    // Paseo's renderer runs Mermaid itself and draws subgraphs; the plugin would drop them.
+    const subgraph = "```mermaid\nflowchart LR\n  subgraph api\n    A --> B\n  end\n```";
+    expect(split(`See:\n\n${subgraph}`)).toBeUndefined();
+    expect(split(`${DIAGRAM}\n\nand\n\n${subgraph}`)).toBeUndefined();
+  });
+
+  it("leaves a diagram type the plugin does not draw to Paseo instead of showing its source", () => {
+    expect(split("```mermaid\ngantt\n  title Release\n```")).toBeUndefined();
+  });
+
+  it("keeps a diagram that is still arriving with a half-typed last line", () => {
+    const result = split("Here:\n\n```mermaid\nflowchart TD\n  A --> B\n  B -");
+    expect(result?.items.map((item) => item.kind)).toEqual([TEXT_KIND, DIAGRAM_KIND]);
+  });
+
   it("is deterministic, because Paseo reruns it during reconciliation", () => {
     expect(split(`Before\n${DIAGRAM}`)).toEqual(split(`Before\n${DIAGRAM}`));
   });

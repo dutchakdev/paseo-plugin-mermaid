@@ -61,7 +61,11 @@ export function parseSequence(source: string): SequenceDiagram | null {
       started = true;
       continue;
     }
-    if (!started) continue;
+    // Front matter and anything else before the header is not drawn, so it counts as skipped.
+    if (!started) {
+      skipped.push(original.trim());
+      continue;
+    }
 
     const declared = PARTICIPANT.exec(line);
     if (declared) {

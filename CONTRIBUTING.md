@@ -12,7 +12,7 @@ npm run check        # typecheck, then the full test suite
 npm run preview      # regenerates docs/preview.svg from the real parser and layout
 ```
 
-SDK development dependencies stay pinned to 0.8.0, so typechecking proves the plugin uses only the 0.8 API, which every supported release still provides. Client code must not import `@getpaseo/client` or `@getpaseo/protocol` directly, even for types: they are development dependencies and are absent from an npm installation.
+SDK development dependencies are pinned to 0.13.2 for the types of Paseo's Markdown component and file panels. The plugin still supports 0.11 and 0.12, so typechecking no longer proves an API exists on every supported app: each 0.13 addition goes through `client/compat.ts`, which detects it at runtime, and code that only runs where it exists, like the file panel, says so. `npm run check:bundle` proves it: it compiles the client entry with the installed daemon's own compiler and loads the bundle into a stand-in 0.11 app and a 0.13 app. It needs the `paseo` CLI, so it runs locally, not in CI; run it before a release. Client code must not import `@getpaseo/client` or `@getpaseo/protocol` directly, even for types: they are development dependencies and are absent from an npm installation.
 
 ## Changelog and releases
 

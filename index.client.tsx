@@ -1,5 +1,7 @@
 import type { PluginClientContext } from "@getpaseo/plugin/client";
 import { z } from "zod";
+import { addFilePanel } from "./client/compat";
+import { MermaidFilePanel } from "./client/file-panel";
 import { DiagramItem, TextItem } from "./client/item";
 import { DIAGRAM_KIND, split, TEXT_KIND } from "./shared/transform";
 
@@ -21,6 +23,9 @@ const diagramSchema = z.object({ source: z.string() });
  * The item stores the Mermaid source rather than a parsed graph. Parsing happens
  * at render time, which keeps the stored data small and lets a later fix to the
  * parser improve diagrams that were sent months ago.
+ *
+ * A message with a diagram this plugin cannot draw in full is left to Paseo, whose
+ * own renderer runs Mermaid; see `shared/drawable.ts`.
  *
  * Everything here runs in the app. The plugin has no server entry and starts no
  * daemon process.
@@ -50,6 +55,15 @@ export default function contribute(client: PluginClientContext) {
     version: 1,
     schema: textSchema,
     Component: TextItem,
+  });
+
+  // Paseo 0.13 and later; older apps skip it.
+  addFilePanel(client, {
+    id: "mermaid-file",
+    title: "Mermaid diagram",
+    icon: "Workflow",
+    files: { extensions: ["mmd", "mermaid"] },
+    Component: MermaidFilePanel,
   });
 
   return () => {};

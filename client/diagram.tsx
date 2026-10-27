@@ -2,7 +2,6 @@ import type { PluginTheme } from "@getpaseo/plugin";
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { parseFlowchart, type Flowchart, type NodeShape } from "../shared/flowchart";
-import { namesADiagram } from "../shared/segment";
 import {
   layoutFlowchart,
   layoutSequence,
@@ -61,12 +60,12 @@ export function Drawing({ parsed, theme }: { parsed: DrawableDiagram; theme: Plu
   );
 }
 
-export function Unsupported({ source, theme }: { source: string; theme: PluginTheme }) {
-  // The item is claimed as soon as the fence opens, so most of the time this is a
-  // diagram halfway through arriving rather than one this plugin cannot draw.
-  // Saying "unsupported" about unfinished source would be a lie that flashes on
-  // screen every time.
-  const arriving = namesADiagram(source);
+/**
+ * Source that names no diagram yet. The transform hands every diagram this plugin
+ * cannot draw to Paseo, so what reaches here is a diagram still arriving, shown as
+ * it is typed until its header settles.
+ */
+export function Arriving({ source, theme }: { source: string; theme: PluginTheme }) {
   return (
     <View
       style={{
@@ -74,14 +73,8 @@ export function Unsupported({ source, theme }: { source: string; theme: PluginTh
         borderWidth: StyleSheet.hairlineWidth,
         borderColor: theme.colors.foregroundMuted,
         padding: 10,
-        gap: 6,
       }}
     >
-      {arriving ? null : (
-        <Text style={{ color: theme.colors.foregroundMuted, fontSize: 11 }}>
-          This plugin draws flowchart and sequenceDiagram. Showing the source instead.
-        </Text>
-      )}
       <Text selectable style={{ color: theme.colors.foreground, fontFamily: "Menlo", fontSize: 12 }}>
         {source}
       </Text>

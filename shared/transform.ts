@@ -1,4 +1,5 @@
 import type { PluginTimelineItem } from "@getpaseo/plugin";
+import { drawable } from "./drawable";
 import { segmentMessage } from "./segment";
 
 export const DIAGRAM_KIND = "mermaid-diagram";
@@ -14,7 +15,11 @@ export function split(text: string): { items: PluginTimelineItem[] } | undefined
   const segments = segmentMessage(text);
   // Leave the entry alone unless there is a diagram to draw: Paseo renders
   // ordinary Markdown better than this plugin does.
-  if (!segments.some((segment) => segment.kind === "mermaid")) return undefined;
+  const diagrams = segments.filter((segment) => segment.kind === "mermaid");
+  if (diagrams.length === 0) return undefined;
+  // One diagram the plugin cannot draw in full leaves the whole message to Paseo,
+  // which draws every diagram in it with Mermaid itself.
+  if (!diagrams.every((diagram) => drawable(diagram.source, diagram.open))) return undefined;
 
   // Pushed one branch at a time rather than mapped through a ternary: a ternary
   // produces a union of the two shapes, and TypeScript gives the absent members

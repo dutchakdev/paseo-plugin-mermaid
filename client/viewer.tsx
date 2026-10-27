@@ -4,7 +4,7 @@ import React, { useMemo, useState } from "react";
 import { LayoutChangeEvent, ScrollView, StyleSheet, Text, View } from "react-native";
 import { fitScale, overflowsAfterFit } from "../shared/layout";
 import { fitBothScale, fitRowZoom, zoomIn, zoomOut, type Size } from "../shared/zoom";
-import { Drawing, naturalSize, parseDiagram, Unsupported, type DrawableDiagram } from "./diagram";
+import { Arriving, Drawing, naturalSize, parseDiagram, type DrawableDiagram } from "./diagram";
 import { Toolbar } from "./toolbar";
 
 /**
@@ -27,19 +27,13 @@ export function DiagramViewer({ source, theme, compact }: { source: string; them
   const [popped, setPopped] = useState(false);
 
   if (parsed.kind === "unsupported") {
-    // Showing the source beats drawing a guess at what it meant.
-    return <Unsupported source={source} theme={theme} />;
+    // Only a diagram whose header is still arriving gets here; see `drawable`.
+    return <Arriving source={source} theme={theme} />;
   }
 
   return (
     <View style={{ gap: 6 }}>
       <RowViewer parsed={parsed} source={source} theme={theme} compact={compact} onPopOut={() => setPopped(true)} />
-      {parsed.kind === "flow" && parsed.skipped.length > 0 ? (
-        <Text style={{ color: theme.colors.foregroundMuted, fontSize: 11 }}>
-          {parsed.skipped.length} line{parsed.skipped.length === 1 ? "" : "s"} not drawn: subgraphs and styling are
-          not supported yet.
-        </Text>
-      ) : null}
       {popped ? (
         <PopOut parsed={parsed} source={source} theme={theme} compact={compact} onClose={() => setPopped(false)} />
       ) : null}
