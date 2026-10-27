@@ -14,6 +14,8 @@ npm run preview      # regenerates docs/preview.svg from the real parser and lay
 
 SDK development dependencies are pinned to 0.13.2 for the types of Paseo's Markdown component and file panels. The plugin still supports 0.11 and 0.12, so typechecking no longer proves an API exists on every supported app: each 0.13 addition goes through `client/compat.ts`, which detects it at runtime, and code that only runs where it exists, like the file panel, says so. `npm run check:bundle` proves it: it compiles the client entry with the installed daemon's own compiler and loads the bundle into a stand-in 0.11 app and a 0.13 app. It needs the `paseo` CLI, so it runs locally, not in CI; run it before a release. Client code must not import `@getpaseo/client` or `@getpaseo/protocol` directly, even for types: they are development dependencies and are absent from an npm installation.
 
+Typechecking runs TypeScript 7, the native compiler. Its npm package ships no `tsserver` and no `lib` files, so an editor set to use the workspace's TypeScript shows no types; let the editor use its bundled TypeScript. `@types/node` stays at the major of the oldest Node.js in the CI matrix, 22, so typechecking catches an API that Node lacks, and Dependabot leaves its majors alone. `vite` is a direct development dependency because Vitest 5 requires it as a peer, and the `--legacy-peer-deps` install in CI skips peers under npm 11 (Node 24).
+
 ## Changelog and releases
 
 Versions follow [semantic versioning](https://semver.org). A pull request with a user-visible change adds an entry under `## Unreleased` at the top of `CHANGELOG.md`, in the `Added`, `Changed`, `Fixed`, or `Removed` group. The release notes are that section, so write entries for people who run the plugin.
