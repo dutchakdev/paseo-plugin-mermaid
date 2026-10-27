@@ -94,12 +94,13 @@ types, subgraphs, other node shapes (cylinders, hexagons, parallelograms, double
 circles), Markdown string labels, `style` and `classDef` lines, `&` and `;` that
 join several nodes or statements on one line, sequence blocks such as `loop` and
 `alt`, `%%{init}%%` directives, and front matter. The plugin takes a message only
-when its parsers read every line of every diagram in it.
+when its parsers read every line of every diagram in it. A message whose text
+defines reference-style links or footnotes goes to Paseo as well: split into
+pieces around the diagram, a definition in one piece would not reach the link in
+another.
 
 When the plugin draws a message, the text around the diagram goes through Paseo's
-own Markdown on Paseo 0.13 and newer, so it looks like the rest of the chat; a
-reference link keeps working when its definition sits on the other side of the
-diagram. On
+own Markdown on Paseo 0.13 and newer, so it looks like the rest of the chat. On
 0.11 and 0.12 it goes through the plugin's renderer, which covers headings, lists,
 emphasis and code.
 

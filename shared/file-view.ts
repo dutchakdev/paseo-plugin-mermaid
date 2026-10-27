@@ -10,7 +10,7 @@ export type FileView = { kind: "empty" } | { kind: "diagram"; source: string } |
 export function fileView(text: string): FileView {
   const source = text.trim();
   if (source.length === 0) return { kind: "empty" };
-  if (drawable(source, false)) return { kind: "diagram", source };
+  if (drawable(source, null)) return { kind: "diagram", source };
   // A fence closes on a run of backticks at least as long as its own, so it must
   // be longer than any run inside the source.
   const longest = Math.max(2, ...(source.match(/`+/g) ?? []).map((run) => run.length));

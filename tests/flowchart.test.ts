@@ -11,6 +11,8 @@ describe("parseNodeExpression", () => {
     ["a hexagon", "A{{hex}}"],
     ["a double circle", "A(((done)))"],
     ["a Markdown string label", 'A["`**bold**`"]'],
+    ["quoted nodes run together with &", 'A["one"] & B["two"]'],
+    ["round nodes run together with ;", "A(one); B(two)"],
   ])("refuses %s rather than draw it wrong", (_name, expression) => {
     // Accepted, each would come out as a box with stray brackets in its label, so it must count as skipped.
     expect(parseNodeExpression(expression)).toBeNull();

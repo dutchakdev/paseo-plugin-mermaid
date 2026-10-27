@@ -22,19 +22,26 @@ describe("drawable, for a finished diagram", () => {
     ["a directive that numbers the messages", '%%{init: {"sequence": {"showSequenceNumbers": true}}}%%\nsequenceDiagram\n  A->>B: hi', false],
     ["a directive inside a flowchart", "flowchart TD\n  %%{init: {'theme': 'forest'}}%%\n  A --> B", false],
     ["a plain comment, which draws nothing", "flowchart TD\n  %% the happy path\n  A --> B", true],
+    ["quoted nodes joined with &", 'flowchart TD\n  A["one"] & B["two"] --> C', false],
+    ["a directive at the end of a line", 'sequenceDiagram\n  A->>B: hi %%{init: {"sequence": {"showSequenceNumbers": true}}}%%', false],
   ])("%s", (_name, source, expected) => {
-    expect(drawable(source, false)).toBe(expected);
+    expect(drawable(source, null)).toBe(expected);
   });
 });
 
-describe("drawable, while the fence is still open", () => {
+describe("drawable, while the diagram is still growing", () => {
+  // `finished` holds the lines that ended in a newline; `pending` is the line being typed.
   it("keeps a diagram whose last line is half typed", () => {
     // `A -` would be a skipped line; judged now, the message would go to Paseo and come back a moment later.
-    expect(drawable("flowchart TD\n  B --> C\n  A -", true)).toBe(true);
+    expect(drawable("flowchart TD\n  B --> C", "  A -")).toBe(true);
+  });
+
+  it("keeps a diagram whose header has just ended, though it has nothing to draw yet", () => {
+    expect(drawable("flowchart TD", "")).toBe(true);
   });
 
   it("hands over as soon as a finished line is one the plugin cannot draw", () => {
-    expect(drawable("flowchart LR\n  subgraph client\n  A", true)).toBe(false);
+    expect(drawable("flowchart LR\n  subgraph client", "  A")).toBe(false);
   });
 
   it.each([
@@ -42,18 +49,18 @@ describe("drawable, while the fence is still open", () => {
     ["the start of a keyword it draws", "flowch"],
     ["the start of a keyword shared with others", "g"],
     ["a header still being typed", "sequenceDiagram"],
-  ])("keeps %s, since it can still become a diagram the plugin draws", (_name, source) => {
-    expect(drawable(source, true)).toBe(true);
+  ])("keeps %s, since it can still become a diagram the plugin draws", (_name, pending) => {
+    expect(drawable("", pending)).toBe(true);
   });
 
   it.each([
     ["a keyword it does not draw", "gantt"],
     ["front matter", "---"],
-  ])("hands over %s while the first line is still arriving", (_name, source) => {
-    expect(drawable(source, true)).toBe(false);
+  ])("hands over %s while the first line is still arriving", (_name, pending) => {
+    expect(drawable("", pending)).toBe(false);
   });
 
   it("hands over a finished header no parser accepts", () => {
-    expect(drawable("flowchart-elk TD\n  A", true)).toBe(false);
+    expect(drawable("flowchart-elk TD", "  A")).toBe(false);
   });
 });

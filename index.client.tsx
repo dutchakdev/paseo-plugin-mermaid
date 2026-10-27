@@ -5,8 +5,7 @@ import { MermaidFilePanel } from "./client/file-panel";
 import { DiagramItem, TextItem } from "./client/item";
 import { DIAGRAM_KIND, split, TEXT_KIND } from "./shared/transform";
 
-// `definitions` arrived later; items stored before it have none.
-const textSchema = z.object({ text: z.string(), definitions: z.string().optional() });
+const textSchema = z.object({ text: z.string() });
 const diagramSchema = z.object({ source: z.string() });
 
 /**

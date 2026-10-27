@@ -8,10 +8,17 @@
 
 export type Segment =
   | { kind: "text"; text: string }
-  | { kind: "mermaid"; source: string; open: boolean };
+  | {
+      kind: "mermaid";
+      /** The whole diagram, trimmed: what gets drawn. */
+      source: string;
+      /** The lines that ended in a newline, trimmed. All of `source` once the fence has closed. */
+      finished: string;
+      /** While the fence is open, the last line as typed so far (possibly empty); null once it has closed. */
+      pending: string | null;
+    };
 
-/** An opening or closing code fence: the marker, then an optional language. */
-export const FENCE = /^[ \t]*(`{3,}|~{3,})[ \t]*([^\s`~]*)[ \t]*$/;
+const FENCE = /^[ \t]*(`{3,}|~{3,})[ \t]*([^\s`~]*)[ \t]*$/;
 
 /**
  * Walks fenced blocks rather than reaching for one regex: a message can hold a
@@ -51,7 +58,8 @@ export function segmentMessage(text: string): Segment[] {
     if (match && match[1][0] === fence[0] && match[1].length >= fence.length && match[2] === "") {
       if (language === "mermaid") {
         flushProse();
-        segments.push({ kind: "mermaid", source: body.join("\n").trim(), open: false });
+        const source = body.join("\n").trim();
+        segments.push({ kind: "mermaid", source, finished: source, pending: null });
       } else {
         prose.push(`${fence}${language}`, ...body, fence);
       }
@@ -72,7 +80,14 @@ export function segmentMessage(text: string): Segment[] {
   if (fence !== null) {
     if (language === "mermaid") {
       flushProse();
-      segments.push({ kind: "mermaid", source: body.join("\n").trim(), open: true });
+      // Split before trimming: the raw last line is the one still being typed, and
+      // trimming first would make a finished line that is followed by a space look pending.
+      segments.push({
+        kind: "mermaid",
+        source: body.join("\n").trim(),
+        finished: body.slice(0, -1).join("\n").trim(),
+        pending: body[body.length - 1] ?? "",
+      });
     } else {
       prose.push(`${fence}${language}`, ...body);
     }

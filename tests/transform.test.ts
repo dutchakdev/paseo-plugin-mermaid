@@ -57,23 +57,26 @@ describe("split", () => {
     expect(split("```mermaid\nflowchart TD\n  A --> B\n  classDef red fill:#f00", "complete")).toBeUndefined();
   });
 
-  it("counts a streamed line as finished once its newline has arrived", () => {
-    expect(split("```mermaid\nflowchart LR\n  A --> B\n  subgraph api\n", "streaming")).toBeUndefined();
+  it("counts a streamed line as finished once its newline has arrived, whatever follows it", () => {
+    const finished = "```mermaid\nflowchart LR\n  A --> B\n  subgraph api\n";
+    expect(split(finished, "streaming")).toBeUndefined();
+    // A space typed after the newline must not make the subgraph line pending again and take the message back.
+    expect(split(`${finished} `, "streaming")).toBeUndefined();
+    expect(split(`${finished}  B`, "streaming")).toBeUndefined();
   });
 
-  it("gives every prose item the message's link definitions, so a reference link still resolves across a diagram", () => {
-    // Each prose item is its own Markdown document; `[Guide][guide]` above the diagram needs the definition below it.
-    const result = split(`See [Guide][guide].\n\n${DIAGRAM}\n\n[guide]: https://paseo.sh/docs`, "complete");
-    const prose = result?.items.filter((item) => item.kind === TEXT_KIND).map((item) => item.data);
-    expect(prose).toEqual([
-      { text: "See [Guide][guide].", definitions: "[guide]: https://paseo.sh/docs" },
-      { text: "[guide]: https://paseo.sh/docs", definitions: "[guide]: https://paseo.sh/docs" },
-    ]);
+  it("keeps a streamed diagram whose header has just ended, rather than hand it over and take it back", () => {
+    expect(split("```mermaid\nflowchart TD\n", "streaming")?.items.map((item) => item.kind)).toEqual([DIAGRAM_KIND]);
   });
 
-  it("does not take definitions from code blocks, or footnotes, whose list would repeat under every item", () => {
-    const result = split(`\`\`\`md\n[x]: https://example.com\n\`\`\`\n\nNote[^1]\n\n[^1]: Footnote.\n\n${DIAGRAM}`, "complete");
-    for (const item of result?.items ?? []) expect(item.data).not.toHaveProperty("definitions");
+  it.each([
+    ["a reference link defined on the other side of the diagram", `See [Guide][guide].\n\n${DIAGRAM}\n\n[guide]: https://paseo.sh/docs`],
+    ["a definition whose destination is on the next line", `See [Guide][guide].\n\n${DIAGRAM}\n\n[guide]:\n  https://paseo.sh/docs`],
+    ["a definition inside a blockquote", `${DIAGRAM}\n\n> [guide]: https://paseo.sh/docs`],
+    ["a footnote", `Note[^1]\n\n${DIAGRAM}\n\n[^1]: Footnote.`],
+  ])("leaves a message with %s to Paseo, which resolves it across the whole message", (_name, text) => {
+    // Each prose item is a Markdown document of its own, so a definition in one would not reach a link in another.
+    expect(split(text, "complete")).toBeUndefined();
   });
 
   it("is deterministic, because Paseo reruns it during reconciliation", () => {
