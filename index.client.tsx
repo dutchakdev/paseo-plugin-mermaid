@@ -5,7 +5,8 @@ import { MermaidFilePanel } from "./client/file-panel";
 import { DiagramItem, TextItem } from "./client/item";
 import { DIAGRAM_KIND, split, TEXT_KIND } from "./shared/transform";
 
-const textSchema = z.object({ text: z.string() });
+// `definitions` arrived later; items stored before it have none.
+const textSchema = z.object({ text: z.string(), definitions: z.string().optional() });
 const diagramSchema = z.object({ source: z.string() });
 
 /**
@@ -36,12 +37,12 @@ export default function contribute(client: PluginClientContext) {
   client.addTimelineTransformer({
     id: "mermaid-assistant",
     query: { itemType: "assistant_message" },
-    transform: ({ item }) => split(item.text),
+    transform: ({ item, phase }) => split(item.text, phase),
   });
   client.addTimelineTransformer({
     id: "mermaid-user",
     query: { itemType: "user_message" },
-    transform: ({ item }) => split(item.text),
+    transform: ({ item, phase }) => split(item.text, phase),
   });
 
   client.addTimelineRenderer({

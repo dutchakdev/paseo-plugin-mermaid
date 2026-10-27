@@ -86,17 +86,20 @@ paseo plugin install "$PWD"
 | Node shapes | `[rect]`, `(round)`, `([stadium])`, `[[subroutine]]`, `{diamond}`, `((circle))`, `>asymmetric]` |
 | Edges | `-->`, `---`, `-.->`,  `-.-`, `==>`, `===` |
 | Edge labels | `-->|both|` and `-- forms -->` |
-| `sequenceDiagram` | participants, actors, notes |
+| `sequenceDiagram` | participants, actors, notes, messages to oneself |
 | Message arrows | `->`, `->>`, `-->`, `-->>`, `-x`, `--x`, `-)`, `--)` |
 
 Everything else is left to Paseo, which renders it with Mermaid: other diagram
-types, subgraphs, `style` and `classDef` lines, `A & B` edge targets, sequence
-blocks such as `loop` and `alt`, and front matter. The plugin takes a message only
-when it can draw every diagram in it in full, so a diagram never appears with
-lines missing.
+types, subgraphs, other node shapes (cylinders, hexagons, parallelograms, double
+circles), Markdown string labels, `style` and `classDef` lines, `&` and `;` that
+join several nodes or statements on one line, sequence blocks such as `loop` and
+`alt`, `%%{init}%%` directives, and front matter. The plugin takes a message only
+when its parsers read every line of every diagram in it.
 
 When the plugin draws a message, the text around the diagram goes through Paseo's
-own Markdown on Paseo 0.13 and newer, so it looks like the rest of the chat. On
+own Markdown on Paseo 0.13 and newer, so it looks like the rest of the chat; a
+reference link keeps working when its definition sits on the other side of the
+diagram. On
 0.11 and 0.12 it goes through the plugin's renderer, which covers headings, lists,
 emphasis and code.
 
@@ -168,7 +171,10 @@ Messages without a diagram are left alone entirely.
 draws everything, so a drawing with lines missing would be worse than leaving the
 message to it. The parsers report every line they skip, and one skipped line in
 any diagram leaves the whole message to Paseo (`shared/drawable.ts`). That is
-decided from what the parsers read, not from the first word of the source.
+decided from what the parsers read, not from the first word of the source, so the
+parsers refuse what they would draw wrong rather than accept it loosely: a label
+with a stray square bracket, a label wrapped whole in brackets that names another
+shape, a directive.
 
 **Items store the source, not a parsed graph.** Parsing happens at render time.
 The stored data stays small, and a later fix to the parser improves diagrams that
@@ -179,10 +185,11 @@ streaming update, and it renders `mermaid` fences itself as soon as one opens. A
 transformer that waited for the closing ``` would leave the host drawing the
 diagram for the whole stream and then swap renderers at the last line. An
 unfinished block is therefore taken over at once and drawn from whatever has
-parsed so far. While it is open, only finished lines decide whether it goes to
-Paseo: the last line may be half typed. Finished lines never change, so a diagram
-that does need Paseo, say one that opens a subgraph, is handed over once, at the
-first line that shows it.
+parsed so far. While the message streams and the fence is open, the last line
+counts only once its newline has arrived: until then it may be half typed.
+Finished lines never change, so a diagram that does need Paseo, say one that opens
+a subgraph, is handed over once, at the first line that shows it. A finished
+message is judged on every line, even when its fence never closed.
 
 **The drawing is fitted to the row.** A diagram's natural size is whatever its
 labels happened to add up to, which is no basis for how big it should appear. The

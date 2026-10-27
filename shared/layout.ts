@@ -1,4 +1,5 @@
 import type { Direction, Flowchart, FlowEdge, FlowNode } from "./flowchart";
+import type { SeqEvent } from "./sequence";
 
 /**
  * Layered layout for a flowchart, computed here rather than in the renderer so
@@ -377,13 +378,21 @@ const SEQ_HEADER = 40;
 const SEQ_GAP = 40;
 const SEQ_MIN_COLUMN = 96;
 
+/** A message to oneself: a loop this wide right of the lifeline, its label this far past the loop. */
+export const SELF_LOOP_WIDTH = 28;
+export const SELF_LABEL_GAP = 6;
+
 /**
  * Columns are sized to their own label, not to a shared width: one participant
  * called "Payment gateway" should not push every other column that wide.
+ *
+ * `events` widens the drawing where a message to oneself would run past the right
+ * edge: its loop and label sit to the right of the lifeline.
  */
 export function layoutSequence(
   participants: { id: string; label: string; actor: boolean }[],
   eventCount: number,
+  events: readonly SeqEvent[] = [],
 ): SequenceLayout {
   const columns: SequenceColumn[] = [];
   let cursor = 0;
@@ -399,11 +408,19 @@ export function layoutSequence(
     height: SEQ_ROW,
   }));
 
+  const centers = new Map(columns.map((column) => [column.id, column.centerX]));
+  let width = Math.max(0, cursor - SEQ_GAP);
+  for (const event of events) {
+    if (event.kind !== "message" || event.from !== event.to) continue;
+    const labelEnd = (centers.get(event.from) ?? 0) + SELF_LOOP_WIDTH + SELF_LABEL_GAP + Math.round(event.text.length * CHAR_WIDTH);
+    width = Math.max(width, labelEnd);
+  }
+
   return {
     columns,
     rows,
     headerHeight: SEQ_HEADER,
-    width: Math.max(0, cursor - SEQ_GAP),
+    width,
     height: SEQ_HEADER + eventCount * SEQ_ROW + 12,
   };
 }

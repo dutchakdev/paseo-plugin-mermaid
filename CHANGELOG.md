@@ -8,8 +8,13 @@
 
 ### Changed
 
-- A message with a diagram the plugin cannot draw in full is left to Paseo's own Mermaid renderer instead of being drawn with lines missing or shown as source. That covers other diagram types, subgraphs, `style` and `classDef` lines, `A & B` edge targets, sequence blocks such as `loop`, and front matter. While a diagram streams in, only finished lines count, so a half-typed line never hands it over; a diagram that turns out to need Paseo switches renderer once.
-- On Paseo 0.13 and newer, the text around a diagram is rendered with Paseo's own Markdown, so links, tables and highlighted code look as they do in the rest of the chat. Paseo 0.11 and 0.12 keep the plugin's renderer.
+- A message with a diagram the plugin cannot draw in full is left to Paseo's own Mermaid renderer instead of being drawn with lines missing or shown as source. That covers other diagram types, subgraphs, `style` and `classDef` lines, `&` and `;` joining several nodes or statements on one line, sequence blocks such as `loop`, `%%{init}%%` directives, and front matter. While a message streams, a line counts once its newline has arrived, so a half-typed line never hands the diagram over; a diagram that turns out to need Paseo switches renderer once. A finished message is judged on every line, even when its fence never closed.
+- The flowchart parser refuses node shapes it would draw wrong instead of drawing them as boxes with stray brackets in the label: cylinders, hexagons (drawn as diamonds until now), parallelograms, trapezoids, double circles, and Markdown string labels. Diagrams with them go to Paseo.
+- On Paseo 0.13 and newer, the text around a diagram is rendered with Paseo's own Markdown, so links, tables and highlighted code look as they do in the rest of the chat, and a reference link resolves even when its definition is on the other side of the diagram. Paseo 0.11 and 0.12 keep the plugin's renderer.
+
+### Fixed
+
+- A sequence message from a participant to itself is drawn as a loop beside its lifeline with its label next to it. It used to collapse to a one-pixel line with its label hidden. The drawing widens when the label would run past the last column.
 
 ### Removed
 

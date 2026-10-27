@@ -10,7 +10,8 @@ export type Segment =
   | { kind: "text"; text: string }
   | { kind: "mermaid"; source: string; open: boolean };
 
-const FENCE = /^[ \t]*(`{3,}|~{3,})[ \t]*([^\s`~]*)[ \t]*$/;
+/** An opening or closing code fence: the marker, then an optional language. */
+export const FENCE = /^[ \t]*(`{3,}|~{3,})[ \t]*([^\s`~]*)[ \t]*$/;
 
 /**
  * Walks fenced blocks rather than reaching for one regex: a message can hold a

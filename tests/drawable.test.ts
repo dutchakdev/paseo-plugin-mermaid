@@ -19,6 +19,9 @@ describe("drawable, for a finished diagram", () => {
     ["a diagram type the plugin does not draw", "classDiagram\n  Animal <|-- Duck", false],
     ["front matter before the header", "---\ntitle: Login\n---\nflowchart TD\n  A --> B", false],
     ["a header and nothing to draw", "flowchart TD", false],
+    ["a directive that numbers the messages", '%%{init: {"sequence": {"showSequenceNumbers": true}}}%%\nsequenceDiagram\n  A->>B: hi', false],
+    ["a directive inside a flowchart", "flowchart TD\n  %%{init: {'theme': 'forest'}}%%\n  A --> B", false],
+    ["a plain comment, which draws nothing", "flowchart TD\n  %% the happy path\n  A --> B", true],
   ])("%s", (_name, source, expected) => {
     expect(drawable(source, false)).toBe(expected);
   });
