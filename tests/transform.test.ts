@@ -81,6 +81,14 @@ describe("split", () => {
     expect(split(text, "complete")).toBeUndefined();
   });
 
+  it("decides in linear time, since it runs in the app on every streaming update", () => {
+    // 40,000 `[` without a `]` took 2.4 s through a backtracking regex; a linear scan takes milliseconds.
+    const hostile = `${"[".repeat(40_000)}\n\n${DIAGRAM}`;
+    const started = performance.now();
+    split(hostile, "streaming");
+    expect(performance.now() - started).toBeLessThan(500);
+  });
+
   it("is deterministic, because Paseo reruns it during reconciliation", () => {
     expect(split(`Before\n${DIAGRAM}`, "complete")).toEqual(split(`Before\n${DIAGRAM}`, "complete"));
   });
