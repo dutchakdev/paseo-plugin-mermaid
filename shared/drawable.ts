@@ -41,6 +41,8 @@ function meaningful(text: string): boolean {
 
 /** True while the first line, still arriving, can become a header this plugin draws. */
 function couldStillName(line: string): boolean {
+  // A lone `%` may be the start of a `%%` comment, which `uncommented` empties.
+  if ("%%".startsWith(line)) return true;
   const typed = line.toLowerCase();
   return DRAWN.some((keyword) => {
     const known = keyword.toLowerCase();

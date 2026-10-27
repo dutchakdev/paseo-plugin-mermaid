@@ -213,8 +213,9 @@ with no runtime dependencies, and that is where the tests are: bracket shapes,
 operator precedence (`-.->` must never read as `-.-` plus a stray `>`), cycles in
 a flowchart, node overlap, arrow direction, zoom steps that land back on 100%,
 which toolbar controls are live, which diagrams go to Paseo (checked on diagrams
-from this owner's own docs, in `tests/fixtures/`), and the JSON round trip Paseo
-performs on item data before rendering. The Views themselves are checked by
+from this owner's own docs, in `tests/fixtures/`), that a message streamed one
+character at a time changes renderer at most once and only towards Paseo, and the
+JSON round trip Paseo performs on item data before rendering. The Views themselves are checked by
 `npm run typecheck` and by reloading the plugin. `npm run check:bundle` compiles
 the client entry with the installed daemon's compiler and loads it into a stand-in
 0.11 app and a 0.13 app; it needs the `paseo` CLI, so it runs locally, not in CI.

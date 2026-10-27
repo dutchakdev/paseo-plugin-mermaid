@@ -74,6 +74,8 @@ describe("split", () => {
     ["a definition whose destination is on the next line", `See [Guide][guide].\n\n${DIAGRAM}\n\n[guide]:\n  https://paseo.sh/docs`],
     ["a definition inside a blockquote", `${DIAGRAM}\n\n> [guide]: https://paseo.sh/docs`],
     ["a footnote", `Note[^1]\n\n${DIAGRAM}\n\n[^1]: Footnote.`],
+    ["a definition whose label spans lines", `See [Guide][guide].\n\n${DIAGRAM}\n\n[\nguide\n]: /guide`],
+    ["a definition inside a list item", `See [Guide][guide].\n\n${DIAGRAM}\n\n- [guide]: /guide`],
   ])("leaves a message with %s to Paseo, which resolves it across the whole message", (_name, text) => {
     // Each prose item is a Markdown document of its own, so a definition in one would not reach a link in another.
     expect(split(text, "complete")).toBeUndefined();

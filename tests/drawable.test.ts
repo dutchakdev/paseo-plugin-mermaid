@@ -46,6 +46,7 @@ describe("drawable, while the diagram is still growing", () => {
 
   it.each([
     ["nothing yet", ""],
+    ["the first character of a comment", "%"],
     ["the start of a keyword it draws", "flowch"],
     ["the start of a keyword shared with others", "g"],
     ["a header still being typed", "sequenceDiagram"],

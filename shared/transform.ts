@@ -45,9 +45,11 @@ export function split(text: string, phase: "streaming" | "complete"): { items: P
 }
 
 /**
- * A line that starts a link reference definition or a footnote, inside a
- * blockquote too. Splitting the message would put it in a different Markdown
- * document from the link that uses it. Lines inside code blocks match as well;
- * leaving such a message to Paseo costs nothing but the plugin's drawing.
+ * Anything shaped like a link reference definition or a footnote: a bracketed
+ * label and a colon, anywhere. CommonMark allows definitions in list items and
+ * blockquotes and labels that span lines, so matching only well-formed ones at a
+ * line start misses real ones. Splitting the message would put a definition in a
+ * different Markdown document from its link; a false match, such as `a[i]:` in
+ * code, only costs the plugin's drawing, since Paseo renders the message.
  */
-const DEFINITION = /^[ \t]*(?:>[ \t]*)*\[[^\]\n]+\]:/m;
+const DEFINITION = /\[[^\]]+\]:/;
