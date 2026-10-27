@@ -34,6 +34,7 @@ export interface Flowchart {
   skipped: string[];
 }
 
+const DIRECTIVE = /%%\{/;
 const HEADER = /^\s*(?:flowchart|graph)(?:\s+(TD|TB|BT|LR|RL))?\s*$/i;
 
 /** Longest first: `-.->` must win over `-.-`. */
@@ -50,7 +51,6 @@ const OPENERS: { open: string; close: string; shape: NodeShape }[] = [
   { open: "([", close: "])", shape: "stadium" },
   { open: "[[", close: "]]", shape: "subroutine" },
   { open: "((", close: "))", shape: "circle" },
-  { open: "{{", close: "}}", shape: "diamond" },
   { open: "[", close: "]", shape: "rect" },
   { open: "(", close: ")", shape: "round" },
   { open: "{", close: "}", shape: "diamond" },
@@ -74,6 +74,28 @@ function stripQuotes(value: string): string {
   return (quoted ? quoted[1] : trimmed).replace(/<br\s*\/?>/gi, "\n").trim();
 }
 
+/**
+ * The label inside a shape's brackets, or null when the brackets hold syntax this
+ * plugin would draw wrong. Refusing it puts the line among the skipped ones, which
+ * leaves the diagram to Paseo.
+ *
+ * A quoted label may hold anything but its own quote and a Markdown string. Unquoted,
+ * a square bracket or the shape's own closing bracket means a second node run into
+ * this one (`A[x] & B[y]`, `A(x); B(y)`), a label wrapped whole in brackets is another
+ * shape (`[(db)]`, `{{hex}}`, `(((x)))`), and slashes at both ends are a parallelogram
+ * or a trapezoid. Other brackets inside the text, as in `A[Reload (beta)]`, stay part
+ * of the label.
+ */
+function labelOf(inner: string, close: string): string | null {
+  const trimmed = inner.trim();
+  const quoted = /^"([^"]*)"$/.exec(trimmed) ?? /^'([^']*)'$/.exec(trimmed);
+  if (quoted) return /^`[\s\S]*`$/.test(quoted[1].trim()) ? null : stripQuotes(trimmed);
+  if (/[[\]]/.test(trimmed) || [...close].some((char) => trimmed.includes(char))) return null;
+  if (/^[([{][\s\S]*[)\]}]$/.test(trimmed)) return null;
+  if (/^[/\\][\s\S]*[/\\]$/.test(trimmed)) return null;
+  return stripQuotes(trimmed);
+}
+
 /** Reads `id`, `id[Label]`, `id{Decision}`, `id((Circle))` and friends. */
 export function parseNodeExpression(raw: string): FlowNode | null {
   const text = raw.trim();
@@ -85,7 +107,9 @@ export function parseNodeExpression(raw: string): FlowNode | null {
     if (!text.endsWith(close)) continue;
     const id = text.slice(0, start).trim();
     if (!/^[\w.-]+$/.test(id)) continue;
-    const label = stripQuotes(text.slice(start + open.length, text.length - close.length));
+    // The longest opener that fits is the shape meant; a label it cannot read is final.
+    const label = labelOf(text.slice(start + open.length, text.length - close.length), close);
+    if (label === null) return null;
     return { id, label: label.length > 0 ? label : id, shape };
   }
 
@@ -150,6 +174,11 @@ export function parseFlowchart(source: string): Flowchart | null {
   };
 
   for (const original of lines) {
+    // `%%{init: …}%%`, anywhere on a line, is a directive, not a comment: it configures the diagram, which this plugin does not do.
+    if (DIRECTIVE.test(original)) {
+      skipped.push(original.trim());
+      continue;
+    }
     const line = original.replace(/%%.*$/, "").trim();
     if (line.length === 0) continue;
 

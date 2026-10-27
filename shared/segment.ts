@@ -8,7 +8,15 @@
 
 export type Segment =
   | { kind: "text"; text: string }
-  | { kind: "mermaid"; source: string };
+  | {
+      kind: "mermaid";
+      /** The whole diagram, trimmed: what gets drawn. */
+      source: string;
+      /** The lines that ended in a newline, trimmed. All of `source` once the fence has closed. */
+      finished: string;
+      /** While the fence is open, the last line as typed so far (possibly empty); null once it has closed. */
+      pending: string | null;
+    };
 
 const FENCE = /^[ \t]*(`{3,}|~{3,})[ \t]*([^\s`~]*)[ \t]*$/;
 
@@ -50,7 +58,8 @@ export function segmentMessage(text: string): Segment[] {
     if (match && match[1][0] === fence[0] && match[1].length >= fence.length && match[2] === "") {
       if (language === "mermaid") {
         flushProse();
-        segments.push({ kind: "mermaid", source: body.join("\n").trim() });
+        const source = body.join("\n").trim();
+        segments.push({ kind: "mermaid", source, finished: source, pending: null });
       } else {
         prose.push(`${fence}${language}`, ...body, fence);
       }
@@ -71,24 +80,20 @@ export function segmentMessage(text: string): Segment[] {
   if (fence !== null) {
     if (language === "mermaid") {
       flushProse();
-      segments.push({ kind: "mermaid", source: body.join("\n").trim() });
+      // Split before trimming: the raw last line is the one still being typed, and
+      // trimming first would make a finished line that is followed by a space look pending.
+      segments.push({
+        kind: "mermaid",
+        source: body.join("\n").trim(),
+        finished: body.slice(0, -1).join("\n").trim(),
+        pending: body[body.length - 1] ?? "",
+      });
     } else {
       prose.push(`${fence}${language}`, ...body);
     }
   }
   flushProse();
   return segments;
-}
-
-/**
- * True when the source already names a diagram this plugin draws.
- *
- * Half-arrived source parses to nothing, and complaining that it is unsupported
- * would be wrong: it is unfinished, not unsupported.
- */
-export function namesADiagram(source: string): boolean {
-  const first = source.split("\n").find((line) => line.trim().length > 0) ?? "";
-  return /^(flowchart|graph|sequenceDiagram)\b/.test(first.trim());
 }
 
 /** True when the message is worth taking over at all. */

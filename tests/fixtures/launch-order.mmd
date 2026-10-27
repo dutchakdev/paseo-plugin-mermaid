@@ -1,0 +1,10 @@
+flowchart TD
+  A[agent.session_open, reason create] --> B{default set?}
+  B -- no --> Z[no binding: the CLI's own sign-in]
+  B -- yes --> C[launchOrder: cached limits + model]
+  C --> D{default exhausted, or plan lacks the model?}
+  D -- no --> E[default first, then spares by room]
+  D -- yes --> F[spares by room, unknown last, default last]
+  E --> G[probe sign-in in order]
+  F --> G
+  G --> H[bind the first ready account]

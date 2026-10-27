@@ -2,10 +2,11 @@ import type { PluginTheme } from "@getpaseo/plugin";
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { parseFlowchart, type Flowchart, type NodeShape } from "../shared/flowchart";
-import { namesADiagram } from "../shared/segment";
 import {
   layoutFlowchart,
   layoutSequence,
+  SELF_LABEL_GAP,
+  SELF_LOOP_WIDTH,
   type FlowLayout,
   type LaidOutEdge,
   type LaidOutNode,
@@ -41,7 +42,7 @@ export function parseDiagram(source: string): ParsedDiagram {
   if (flow && flow.nodes.length > 0) return { kind: "flow", layout: layoutFlowchart(flow), skipped: flow.skipped };
   const sequence = parseSequence(source);
   if (sequence && sequence.participants.length > 0) {
-    const box = layoutSequence(sequence.participants, sequence.events.length);
+    const box = layoutSequence(sequence.participants, sequence.events.length, sequence.events);
     return { kind: "sequence", diagram: sequence, size: { width: box.width, height: box.height } };
   }
   return { kind: "unsupported" };
@@ -61,12 +62,12 @@ export function Drawing({ parsed, theme }: { parsed: DrawableDiagram; theme: Plu
   );
 }
 
-export function Unsupported({ source, theme }: { source: string; theme: PluginTheme }) {
-  // The item is claimed as soon as the fence opens, so most of the time this is a
-  // diagram halfway through arriving rather than one this plugin cannot draw.
-  // Saying "unsupported" about unfinished source would be a lie that flashes on
-  // screen every time.
-  const arriving = namesADiagram(source);
+/**
+ * Source that names no diagram yet. The transform hands every diagram this plugin
+ * cannot draw to Paseo, so what reaches here is a diagram still arriving, shown as
+ * it is typed until its header settles.
+ */
+export function Arriving({ source, theme }: { source: string; theme: PluginTheme }) {
   return (
     <View
       style={{
@@ -74,14 +75,8 @@ export function Unsupported({ source, theme }: { source: string; theme: PluginTh
         borderWidth: StyleSheet.hairlineWidth,
         borderColor: theme.colors.foregroundMuted,
         padding: 10,
-        gap: 6,
       }}
     >
-      {arriving ? null : (
-        <Text style={{ color: theme.colors.foregroundMuted, fontSize: 11 }}>
-          This plugin draws flowchart and sequenceDiagram. Showing the source instead.
-        </Text>
-      )}
       <Text selectable style={{ color: theme.colors.foreground, fontFamily: "Menlo", fontSize: 12 }}>
         {source}
       </Text>
@@ -273,7 +268,7 @@ function SequenceView({
   diagram: SequenceDiagram;
   theme: PluginTheme;
 }) {
-  const layout = layoutSequence(diagram.participants, diagram.events.length);
+  const layout = layoutSequence(diagram.participants, diagram.events.length, diagram.events);
   const centers = new Map(layout.columns.map((column) => [column.id, column.centerX]));
 
   return (
@@ -355,12 +350,50 @@ function EventView({
     );
   }
 
+  const color = theme.colors.foregroundMuted;
+
+  if (event.from === event.to) {
+    // A message to oneself: a loop out of the lifeline and back, its label beside it.
+    // The layout widened the drawing for that label (`layoutSequence`).
+    const x = centers.get(event.from) ?? 0;
+    return (
+      <>
+        <View
+          style={{
+            position: "absolute",
+            left: x,
+            top: y + 12,
+            width: SELF_LOOP_WIDTH,
+            height: 18,
+            borderTopWidth: 1.5,
+            borderRightWidth: 1.5,
+            borderBottomWidth: 1.5,
+            borderColor: color,
+            opacity: event.style === "dashed" ? 0.45 : 1,
+          }}
+        />
+        <Arrow at={{ x, y: y + 29.25, direction: "left" }} color={color} />
+        <Text
+          numberOfLines={1}
+          style={{
+            position: "absolute",
+            left: x + SELF_LOOP_WIDTH + SELF_LABEL_GAP,
+            top: y + 14,
+            fontSize: 11,
+            color: theme.colors.foreground,
+          }}
+        >
+          {event.text}
+        </Text>
+      </>
+    );
+  }
+
   const from = centers.get(event.from) ?? 0;
   const to = centers.get(event.to) ?? 0;
   const forward = to >= from;
   const left = Math.min(from, to);
   const width = Math.max(Math.abs(to - from), 1);
-  const color = theme.colors.foregroundMuted;
 
   return (
     <>

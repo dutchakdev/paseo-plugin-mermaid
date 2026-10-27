@@ -130,6 +130,17 @@ describe("layoutSequence", () => {
     expect(layout.columns[1].width).toBeGreaterThan(layout.columns[0].width);
   });
 
+  it("widens the drawing so a message to oneself on the last column keeps its label", () => {
+    // The loop and its label sit to the right of the lifeline; past the last column they would be clipped.
+    const toSelf = { kind: "message", from: "S", to: "S", text: "Check cached token", style: "solid", arrow: "filled" } as const;
+    expect(layoutSequence(people, 1, [toSelf]).width).toBeGreaterThan(layoutSequence(people, 1).width);
+  });
+
+  it("keeps the width when a message to oneself fits before the edge", () => {
+    const toSelf = { kind: "message", from: "U", to: "U", text: "ok", style: "solid", arrow: "filled" } as const;
+    expect(layoutSequence(people, 1, [toSelf]).width).toBe(layoutSequence(people, 1).width);
+  });
+
   it("never overlaps two columns", () => {
     const layout = layoutSequence(people, 1);
     const [first, second] = layout.columns;

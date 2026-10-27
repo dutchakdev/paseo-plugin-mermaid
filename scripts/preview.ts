@@ -106,7 +106,7 @@ const flow = layoutFlowchart(chart);
 
 const sequence = parseSequence(SEQ);
 if (!sequence) throw new Error("the sample sequence no longer parses");
-const columns = layoutSequence(sequence.participants, sequence.events.length);
+const columns = layoutSequence(sequence.participants, sequence.events.length, sequence.events);
 
 /* --------------------------------------------------------------- chrome -- */
 

@@ -27,14 +27,16 @@ Listed in the [Paseo plugin directory](https://paseo.sh/plugins/dutchakdev/merma
   width of the chat while the agent is still writing it.
 - **Flowcharts and sequence diagrams**, with the usual node shapes, edge styles and labels.
 - **A toolbar on every diagram:** zoom, fit to view, pop out, and the source on demand.
+- **`.mmd` files in the file tab** on Paseo 0.13 and newer, redrawn when the file changes.
 - **Nothing leaves the app.** The plugin has no server half, no settings and no network
   access; it reads the message text it is given and draws it with React Native views.
 
 Paseo draws Mermaid itself too, in an iframe inside a zoomable box with a
-fullscreen viewer. This plugin draws it inline instead: readable at the width of
-the message, from the first streamed line, with the same controls above it for
-the times the fitted drawing is not enough: zoom, fit to view, pop out, and the
-source on demand.
+fullscreen viewer, and it draws every diagram type. This plugin draws flowcharts
+and sequence diagrams inline instead: readable at the width of the message, from
+the first streamed line, with the same controls above it for the times the fitted
+drawing is not enough: zoom, fit to view, pop out, and the source on demand. A
+diagram it cannot draw in full stays with Paseo's renderer.
 
 ## Install
 
@@ -62,7 +64,9 @@ Paseo also checks a prerelease's stable version core, so `0.14.0-beta.1` satisfi
 this range. The 0.11.0 betas pass that check but predate the `icon` field, so they
 refuse the manifest as well and need the release named in the install table; see
 [version requirements](https://paseo.sh/docs/plugins/reference#requirements).
-The development SDK stays pinned to 0.8.0, an API every supported release still provides; Paseo supplies the runtime modules.
+The development SDK is pinned to 0.13.2 for its types; Paseo supplies the runtime
+modules. Paseo's Markdown component and file panels arrived in 0.13, so the plugin
+checks for them at runtime and works without them on 0.11 and 0.12.
 
 To work on it locally instead:
 
@@ -82,13 +86,23 @@ paseo plugin install "$PWD"
 | Node shapes | `[rect]`, `(round)`, `([stadium])`, `[[subroutine]]`, `{diamond}`, `((circle))`, `>asymmetric]` |
 | Edges | `-->`, `---`, `-.->`,  `-.-`, `==>`, `===` |
 | Edge labels | `-->|both|` and `-- forms -->` |
-| `sequenceDiagram` | participants, actors, notes |
+| `sequenceDiagram` | participants, actors, notes, messages to oneself |
 | Message arrows | `->`, `->>`, `-->`, `-->>`, `-x`, `--x`, `-)`, `--)` |
 
-Not supported yet: subgraphs, `style`/`classDef` directives, and the diagram types
-beyond these two. Unrecognised lines are counted and reported under the drawing
-rather than dropped, and a diagram the parser cannot read at all falls back to
-showing its source.
+Everything else is left to Paseo, which renders it with Mermaid: other diagram
+types, subgraphs, other node shapes (cylinders, hexagons, parallelograms, double
+circles), Markdown string labels, `style` and `classDef` lines, `&` and `;` that
+join several nodes or statements on one line, sequence blocks such as `loop` and
+`alt`, `%%{init}%%` directives, and front matter. The plugin takes a message only
+when its parsers read every line of every diagram in it. A message whose text
+defines reference-style links or footnotes goes to Paseo as well: split into
+pieces around the diagram, a definition in one piece would not reach the link in
+another.
+
+When the plugin draws a message, the text around the diagram goes through Paseo's
+own Markdown on Paseo 0.13 and newer, so it looks like the rest of the chat. On
+0.11 and 0.12 it goes through the plugin's renderer, which covers headings, lists,
+emphasis and code.
 
 ## Controls
 
@@ -109,25 +123,35 @@ sideways; the transcript scrolls vertically as it always does, so nothing is
 clipped. On phones and narrow windows the button labels drop and the icons and
 the percent stay.
 
+## Mermaid files
+
+On Paseo 0.13 and newer, `.mmd` and `.mermaid` files can open in the file tab as
+**Mermaid diagram**. Paseo offers it beside its Source editor the first time such a
+file opens, and **Open with…** in the tab menu switches between them. The drawing
+has the same toolbar as in the chat and redraws when the file changes on disk, so
+a diagram an agent is editing updates in place. A diagram the plugin does not draw
+in full is rendered in the same tab by Paseo's Markdown, which uses Mermaid.
+
 ## How it works
 
 ```mermaid
 flowchart TD
     Msg([Message arrives]) --> Check{Has mermaid?}
     Check -->|no| Paseo[Paseo renders it]
-    Check -->|yes| Split[[Split into segments]]
+    Check -->|yes| Full{Every diagram drawn in full?}
+    Full -->|no| Paseo
+    Full -->|yes| Split[[Split into segments]]
     Split --> Text(Prose)
     Split --> Src(Diagram source)
-    Text --> Md[Minimal markdown]
+    Text --> Md[Paseo Markdown from 0.13]
     Src --> Parse{Which parser?}
     Parse -->|flowchart| Layout[Layered layout]
     Parse -->|sequence| Columns[Column layout]
-    Parse -.->|neither| Raw[Show source]
     Layout --> Draw((Views))
     Columns --> Draw
 ```
 
-Three constraints shaped this plugin.
+These constraints shaped this plugin.
 
 **Mermaid itself cannot run here.** A Paseo client bundle may import only the modules the
 app provides: `react`, `react-native`, `@tanstack/react-query`, `zod` and the
@@ -140,9 +164,18 @@ with three transparent borders.
 **A transformer replaces the whole timeline entry.** Once a message contains a
 diagram, the plugin owns the message. It is split into prose and diagram
 segments, and each becomes its own item, so the text around the diagram keeps its
-place. That prose goes through a small Markdown renderer covering headings,
-lists, emphasis and code — less than Paseo's own, which is why messages without a
-diagram are left alone entirely.
+place. From Paseo 0.13 that prose goes through Paseo's own Markdown component;
+before it, through a small renderer covering headings, lists, emphasis and code.
+Messages without a diagram are left alone entirely.
+
+**A diagram is drawn in full or not at all.** Paseo's renderer runs Mermaid and
+draws everything, so a drawing with lines missing would be worse than leaving the
+message to it. The parsers report every line they skip, and one skipped line in
+any diagram leaves the whole message to Paseo (`shared/drawable.ts`). That is
+decided from what the parsers read, not from the first word of the source, so the
+parsers refuse what they would draw wrong rather than accept it loosely: a label
+with a stray square bracket, a label wrapped whole in brackets that names another
+shape, a directive.
 
 **Items store the source, not a parsed graph.** Parsing happens at render time.
 The stored data stays small, and a later fix to the parser improves diagrams that
@@ -153,7 +186,11 @@ streaming update, and it renders `mermaid` fences itself as soon as one opens. A
 transformer that waited for the closing ``` would leave the host drawing the
 diagram for the whole stream and then swap renderers at the last line. An
 unfinished block is therefore taken over at once and drawn from whatever has
-parsed so far.
+parsed so far. While the message streams and the fence is open, the last line
+counts only once its newline has arrived: until then it may be half typed.
+Finished lines never change, so a diagram that does need Paseo, say one that opens
+a subgraph, is handed over once, at the first line that shows it. A finished
+message is judged on every line, even when its fence never closed.
 
 **The drawing is fitted to the row.** A diagram's natural size is whatever its
 labels happened to add up to, which is no basis for how big it should appear. The
@@ -175,9 +212,13 @@ The parsers, the layout, the zoom model and the transform are pure functions
 with no runtime dependencies, and that is where the tests are: bracket shapes,
 operator precedence (`-.->` must never read as `-.-` plus a stray `>`), cycles in
 a flowchart, node overlap, arrow direction, zoom steps that land back on 100%,
-which toolbar controls are live, and the JSON round trip Paseo performs on item
-data before rendering. The Views themselves are checked by `npm run typecheck`
-and by reloading the plugin.
+which toolbar controls are live, which diagrams go to Paseo (checked on diagrams
+from this owner's own docs, in `tests/fixtures/`), that a message streamed one
+character at a time changes renderer at most once and only towards Paseo, and the
+JSON round trip Paseo performs on item data before rendering. The Views themselves are checked by
+`npm run typecheck` and by reloading the plugin. `npm run check:bundle` compiles
+the client entry with the installed daemon's compiler and loads it into a stand-in
+0.11 app and a 0.13 app; it needs the `paseo` CLI, so it runs locally, not in CI.
 
 | File | Role |
 | ---- | ---- |
@@ -187,13 +228,17 @@ and by reloading the plugin.
 | `shared/layout.ts` | layered layout, orthogonal edge routing, column layout |
 | `shared/markdown.ts` | the Markdown subset used for prose |
 | `shared/zoom.ts` | zoom steps, fit to view, and which controls are live |
+| `shared/drawable.ts` | whether the plugin draws a diagram in full, or leaves the message to Paseo |
 | `shared/transform.ts` | the timeline transform itself |
+| `shared/file-view.ts` | what the file panel shows for a `.mmd` file |
 | `client/diagram.tsx` | drawing, in Views, at natural size |
 | `client/viewer.tsx` | fitting, zoom and the source toggle, in the row and in the pop-out |
 | `client/toolbar.tsx` | the toolbar |
-| `client/markdown.tsx` | prose rendering |
+| `client/markdown.tsx` | prose rendering before Paseo 0.13 |
 | `client/item.tsx` | the two timeline renderers |
-| `index.client.tsx` | registers the transformers and renderers; the only entry |
+| `client/file-panel.tsx` | the `.mmd` file panel |
+| `client/compat.ts` | runtime checks for what apps before 0.13 lack |
+| `index.client.tsx` | registers the transformers, renderers and file panel; the only entry |
 
 Releases are cut from tags by GitHub Actions; see [CONTRIBUTING.md](CONTRIBUTING.md)
 for the flow and [CHANGELOG.md](CHANGELOG.md) for what changed.

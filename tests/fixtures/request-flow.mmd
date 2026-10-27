@@ -1,0 +1,13 @@
+sequenceDiagram
+    participant A as Agent
+    participant P as Plugin (daemon)
+    participant U as You (Paseo app)
+    A->>P: request_input (keys and destination, no values)
+    P-->>A: pending
+    P->>U: card in the agent's chat
+    U->>P: open the dialog
+    P-->>U: what the plugin verified about the destination, and a one-time public key
+    U->>U: you type, the app seals the values to that key
+    U->>P: ciphertext only
+    P->>P: open it, check the destination again, write once or run once
+    P->>A: a fixed message, for example Wrote 1 key(s) to .env.local

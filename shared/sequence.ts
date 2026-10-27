@@ -22,6 +22,7 @@ export interface SequenceDiagram {
   skipped: string[];
 }
 
+const DIRECTIVE = /%%\{/;
 const HEADER = /^\s*sequenceDiagram\s*$/i;
 const PARTICIPANT = /^(participant|actor)\s+([\w.-]+)(?:\s+as\s+(.+))?$/i;
 const NOTE = /^note\s+(?:(over)\s+([\w.,\s-]+)|(?:left|right)\s+of\s+([\w.-]+))\s*:\s*(.*)$/i;
@@ -55,13 +56,22 @@ export function parseSequence(source: string): SequenceDiagram | null {
   };
 
   for (const original of lines) {
+    // `%%{init: …}%%`, anywhere on a line, is a directive, not a comment: it configures the diagram, which this plugin does not do.
+    if (DIRECTIVE.test(original)) {
+      skipped.push(original.trim());
+      continue;
+    }
     const line = original.replace(/%%.*$/, "").trim();
     if (line.length === 0) continue;
     if (HEADER.test(line)) {
       started = true;
       continue;
     }
-    if (!started) continue;
+    // Front matter and anything else before the header is not drawn, so it counts as skipped.
+    if (!started) {
+      skipped.push(original.trim());
+      continue;
+    }
 
     const declared = PARTICIPANT.exec(line);
     if (declared) {

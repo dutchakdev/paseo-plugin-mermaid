@@ -2,6 +2,30 @@ import { describe, expect, it } from "vitest";
 import { normalizeEdgeLabels, parseFlowchart, parseNodeExpression, splitChain } from "../shared/flowchart";
 
 describe("parseNodeExpression", () => {
+  it.each([
+    ["two nodes run together with &", "A[one] & B[two]"],
+    ["two statements run together with ;", "A[one]; B[two]"],
+    ["a cylinder", "A[(db)]"],
+    ["a parallelogram", "A[/in/]"],
+    ["a trapezoid", "A[\\out/]"],
+    ["a hexagon", "A{{hex}}"],
+    ["a double circle", "A(((done)))"],
+    ["a Markdown string label", 'A["`**bold**`"]'],
+    ["quoted nodes run together with &", 'A["one"] & B["two"]'],
+    ["round nodes run together with ;", "A(one); B(two)"],
+  ])("refuses %s rather than draw it wrong", (_name, expression) => {
+    // Accepted, each would come out as a box with stray brackets in its label, so it must count as skipped.
+    expect(parseNodeExpression(expression)).toBeNull();
+  });
+
+  it("keeps brackets inside a quoted label", () => {
+    expect(parseNodeExpression('A["list [x]"]')).toMatchObject({ id: "A", label: "list [x]", shape: "rect" });
+  });
+
+  it("keeps parentheses inside an unquoted label, which agents write often", () => {
+    expect(parseNodeExpression("A[Reload (beta)]")).toMatchObject({ id: "A", label: "Reload (beta)", shape: "rect" });
+  });
+
   it("reads every bracket shape Mermaid defines", () => {
     expect(parseNodeExpression("A[Rect]")).toMatchObject({ id: "A", label: "Rect", shape: "rect" });
     expect(parseNodeExpression("B(Round)")).toMatchObject({ shape: "round" });

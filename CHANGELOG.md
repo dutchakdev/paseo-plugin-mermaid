@@ -1,5 +1,25 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- On Paseo 0.13 and newer, `.mmd` and `.mermaid` files open in the file tab as a diagram, with the same toolbar, and redraw when the file changes on disk. A diagram the plugin does not draw in full is rendered there by Paseo.
+
+### Changed
+
+- A message with a diagram the plugin cannot draw in full is left to Paseo's own Mermaid renderer instead of being drawn with lines missing or shown as source. That covers other diagram types, subgraphs, `style` and `classDef` lines, `&` and `;` joining several nodes or statements on one line, sequence blocks such as `loop`, `%%{init}%%` directives anywhere on a line, and front matter. While a message streams, a line counts once its newline has arrived, so a half-typed line never hands the diagram over; a diagram that turns out to need Paseo switches renderer once. A finished message is judged on every line, even when its fence never closed.
+- The flowchart parser refuses what it would draw wrong instead of drawing boxes with stray brackets in the label: cylinders, hexagons (drawn as diamonds until now), parallelograms, trapezoids, double circles, Markdown string labels, and several nodes on one line joined with `&` or `;`, quoted or not. Diagrams with them go to Paseo.
+- On Paseo 0.13 and newer, the text around a diagram is rendered with Paseo's own Markdown, so links, tables and highlighted code look as they do in the rest of the chat. Paseo 0.11 and 0.12 keep the plugin's renderer. A message that defines reference-style links or footnotes is left to Paseo, since split around the diagram a definition would not reach its link.
+
+### Fixed
+
+- A sequence message from a participant to itself is drawn as a loop beside its lifeline with its label next to it. It used to collapse to a one-pixel line with its label hidden. The drawing widens when the label would run past the last column.
+
+### Removed
+
+- The "lines not drawn" note under a flowchart and the "Showing the source instead" notice: those diagrams now go to Paseo.
+
 ## 0.3.1 - 2026-10-27
 
 ### Changed
