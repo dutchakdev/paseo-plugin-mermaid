@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- Typechecked with TypeScript 7 and tested with Vitest 5. The plugin's code is the same as in 0.4.0.
+
 ## 0.4.0 - 2026-10-27
 
 ### Added

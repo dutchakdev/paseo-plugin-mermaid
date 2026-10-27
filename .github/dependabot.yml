@@ -13,6 +13,11 @@ updates:
       - dependency-name: react
       - dependency-name: react-native
       - dependency-name: '@types/react'
+      # Node types follow the oldest Node.js the CI matrix runs (22.12), so typechecking
+      # catches an API that Node lacks. @types/node 26 also clashes with another global
+      # URL type here.
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
   - package-ecosystem: github-actions
     # `/` covers the workflows only; the composite action needs its own entry.
     directories: ['/', '/.github/actions/*']
