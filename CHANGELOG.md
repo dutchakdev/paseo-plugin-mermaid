@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- The documents and the plugin directory listing say Paseo 0.11 or newer, as the manifest does, and name no newest release.
+
 ## 0.4.1 - 2026-10-27
 
 ### Changed
