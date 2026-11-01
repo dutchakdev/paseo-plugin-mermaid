@@ -1,6 +1,6 @@
 # Contributing
 
-Mermaid is a client-only TypeScript plugin for Paseo 0.11.x through 0.14.x, including beta releases after 0.11.0. It draws diagrams with React Native views, so it runs on desktop and mobile without a web view or SVG.
+Mermaid is a client-only TypeScript plugin for Paseo 0.11.0 and newer, including beta releases after 0.11.0. It draws diagrams with React Native views, so it runs on desktop and mobile without a web view or SVG.
 
 ## Development setup
 

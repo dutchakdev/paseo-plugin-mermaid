@@ -6,4 +6,4 @@ Each diagram has a toolbar to zoom, fit to view, pop out to a larger view, and s
 
 On Paseo 0.13 and newer, `.mmd` and `.mermaid` files open in the file tab as a diagram, which redraws when the file changes on disk.
 
-The plugin runs entirely in the Paseo app on desktop and mobile, works with Paseo 0.11 to 0.14, has no settings, and needs no additional setup.
+The plugin runs entirely in the Paseo app on desktop and mobile, works with Paseo 0.11 or newer, has no settings, and needs no additional setup.
