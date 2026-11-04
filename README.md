@@ -243,6 +243,12 @@ the client entry with the installed daemon's compiler and loads it into a stand-
 Releases are cut from tags by GitHub Actions; see [CONTRIBUTING.md](CONTRIBUTING.md)
 for the flow and [CHANGELOG.md](CHANGELOG.md) for what changed.
 
+## Other plugins by dutchakdev
+
+- [Account Switcher](https://paseo.sh/plugins/dutchakdev/account-switcher) ([source](https://github.com/dutchakdev/paseo-plugin-account-switcher)): several Claude and ChatGPT/Codex subscription accounts in Paseo, with an account per agent, switching of an existing chat, and every account's limits.
+- [Machine Status](https://paseo.sh/plugins/dutchakdev/machine-status) ([source](https://github.com/dutchakdev/paseo-plugin-machine-status)): load, memory, disk, the ports and processes your agents started, and Docker on the daemon's Mac, with dev-cache cleanup and confirmed process stops.
+- [secure-input](https://paseo.sh/plugins/dutchakdev/secure-input) ([source](https://github.com/dutchakdev/paseo-plugin-secure-input)): agents ask you for secrets through a form, and each value lands in a short-lived file the agent moves without reading it.
+
 ## License
 
 MIT
