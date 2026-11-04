@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- The README and the plugin directory listing link to the author's other Paseo plugins.
+
 ## 0.4.2 - 2026-11-01
 
 ### Changed
