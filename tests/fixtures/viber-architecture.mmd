@@ -1,0 +1,8 @@
+flowchart LR
+  DB[(viber.db + WAL<br/>encrypted)] -->|viber_offline AES-OFB| IDX[(index.db<br/>SQLite + FTS5)]
+  WAL[WAL tail] -->|viber_bridge| IDX
+  IDX --> MCP{{Viber MCP<br/>FastMCP / stdio}}
+  MCP -->|read/search| AG[Claude / Codex]
+  AG -->|send| MCP
+  MCP -->|frida send| VIBER[Viber Desktop]
+  MCP -. OCR/UI fallback .-> VIBER

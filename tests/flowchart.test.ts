@@ -5,17 +5,29 @@ describe("parseNodeExpression", () => {
   it.each([
     ["two nodes run together with &", "A[one] & B[two]"],
     ["two statements run together with ;", "A[one]; B[two]"],
-    ["a cylinder", "A[(db)]"],
-    ["a parallelogram", "A[/in/]"],
-    ["a trapezoid", "A[\\out/]"],
-    ["a hexagon", "A{{hex}}"],
-    ["a double circle", "A(((done)))"],
     ["a Markdown string label", 'A["`**bold**`"]'],
     ["quoted nodes run together with &", 'A["one"] & B["two"]'],
     ["round nodes run together with ;", "A(one); B(two)"],
   ])("refuses %s rather than draw it wrong", (_name, expression) => {
     // Accepted, each would come out as a box with stray brackets in its label, so it must count as skipped.
     expect(parseNodeExpression(expression)).toBeNull();
+  });
+
+  it.each([
+    ["a cylinder", "A[(db)]", "cylinder", "db"],
+    ["a hexagon", "A{{hex}}", "hexagon", "hex"],
+    ["a parallelogram leaning right", "A[/in/]", "lean-right", "in"],
+    ["a parallelogram leaning left", "A[\\out\\]", "lean-left", "out"],
+    ["a trapezoid", "A[/base\\]", "trapezoid", "base"],
+    ["an upside-down trapezoid", "A[\\top/]", "trapezoid-top", "top"],
+    ["a double circle", "A(((done)))", "double-circle", "done"],
+    ["a cylinder with a line break", "A[(db<br/>wal)]", "cylinder", "db\nwal"],
+  ])("reads %s", (_name, expression, shape, label) => {
+    expect(parseNodeExpression(expression)).toEqual({ id: "A", label, shape });
+  });
+
+  it("refuses a label wrapped whole in another shape inside a new one", () => {
+    expect(parseNodeExpression("A[([x])]")).toBeNull();
   });
 
   it("keeps brackets inside a quoted label", () => {

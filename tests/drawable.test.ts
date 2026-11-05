@@ -8,6 +8,7 @@ const fixture = (name: string) => readFileSync(join(__dirname, "fixtures", name)
 const LAUNCH_ORDER = fixture("launch-order.mmd"); // account-switcher docs/architecture.md
 const REQUEST_FLOW = fixture("request-flow.mmd"); // secure-input README
 const LAYERS = fixture("layers.mmd"); // machine-status README: subgraphs and `A & B` targets
+const VIBER_ARCHITECTURE = fixture("viber-architecture.mmd"); // 2026-11-04: cylinders and a hexagon
 
 describe("drawable, for a finished diagram", () => {
   it.each([
@@ -26,6 +27,12 @@ describe("drawable, for a finished diagram", () => {
     ["a directive at the end of a line", 'sequenceDiagram\n  A->>B: hi %%{init: {"sequence": {"showSequenceNumbers": true}}}%%', false],
   ])("%s", (_name, source, expected) => {
     expect(drawable(source, null)).toBe(expected);
+  });
+});
+
+describe("drawable, for the shapes the parser reads", () => {
+  it("draws the 2026-11-04 architecture diagram inline", () => {
+    expect(drawable(VIBER_ARCHITECTURE, null)).toBe(true);
   });
 });
 

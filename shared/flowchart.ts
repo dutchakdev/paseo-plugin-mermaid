@@ -9,7 +9,21 @@
  */
 
 export type Direction = "TD" | "TB" | "BT" | "LR" | "RL";
-export type NodeShape = "rect" | "round" | "stadium" | "subroutine" | "diamond" | "circle" | "asymmetric";
+export type NodeShape =
+  | "rect"
+  | "round"
+  | "stadium"
+  | "subroutine"
+  | "diamond"
+  | "circle"
+  | "asymmetric"
+  | "cylinder"
+  | "hexagon"
+  | "lean-right"
+  | "lean-left"
+  | "trapezoid"
+  | "trapezoid-top"
+  | "double-circle";
 export type EdgeStyle = "solid" | "dotted" | "thick";
 
 export interface FlowNode {
@@ -47,10 +61,24 @@ const OPERATORS: { token: string; style: EdgeStyle; arrow: boolean }[] = [
   { token: "---", style: "solid", arrow: false },
 ];
 
+/**
+ * Tried in order, and the first whose opener sits after the id and whose closer ends
+ * the text wins, so a longer opener goes before any shorter one it starts with:
+ * `(((` before `((`, `[(`, `[/` and `[\` before `[`, `{{` before `{`. The slash
+ * shapes share an opener and are told apart by the closer: `[/ /]` leans right,
+ * `[\ \]` leans left, `[/ \]` is a trapezoid and `[\ /]` its upside-down twin.
+ */
 const OPENERS: { open: string; close: string; shape: NodeShape }[] = [
+  { open: "(((", close: ")))", shape: "double-circle" },
   { open: "([", close: "])", shape: "stadium" },
   { open: "[[", close: "]]", shape: "subroutine" },
+  { open: "[(", close: ")]", shape: "cylinder" },
   { open: "((", close: "))", shape: "circle" },
+  { open: "{{", close: "}}", shape: "hexagon" },
+  { open: "[/", close: "/]", shape: "lean-right" },
+  { open: "[\\", close: "\\]", shape: "lean-left" },
+  { open: "[/", close: "\\]", shape: "trapezoid" },
+  { open: "[\\", close: "/]", shape: "trapezoid-top" },
   { open: "[", close: "]", shape: "rect" },
   { open: "(", close: ")", shape: "round" },
   { open: "{", close: "}", shape: "diamond" },
@@ -81,9 +109,11 @@ function stripQuotes(value: string): string {
  *
  * A quoted label may hold anything but its own quote and a Markdown string. Unquoted,
  * a square bracket or the shape's own closing bracket means a second node run into
- * this one (`A[x] & B[y]`, `A(x); B(y)`), a label wrapped whole in brackets is another
- * shape (`[(db)]`, `{{hex}}`, `(((x)))`), and slashes at both ends are a parallelogram
- * or a trapezoid. Other brackets inside the text, as in `A[Reload (beta)]`, stay part
+ * this one (`A[x] & B[y]`, `A(x); B(y)`), a label wrapped whole in brackets is a second
+ * shape nested in the first (`A[([x])]`, `A(({x}))`), and slashes at both ends are a
+ * parallelogram or a trapezoid nested in it. The shapes that bracket syntax itself
+ * names (`[(db)]`, `{{hex}}`, `(((x)))`, `[/in/]`) are read as openers before a label
+ * is looked at. Other brackets inside the text, as in `A[Reload (beta)]`, stay part
  * of the label.
  */
 function labelOf(inner: string, close: string): string | null {
