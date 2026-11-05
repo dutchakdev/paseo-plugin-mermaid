@@ -8,6 +8,13 @@ describe("parseNodeExpression", () => {
     ["a Markdown string label", 'A["`**bold**`"]'],
     ["quoted nodes run together with &", 'A["one"] & B["two"]'],
     ["round nodes run together with ;", "A(one); B(two)"],
+    ["a round shape nested in a hexagon", "A{{(x)}}"],
+    ["a slash-wrapped label nested in a cylinder", "A[(/x/)]"],
+    ["a round shape nested in a parallelogram", "A[/(x)/]"],
+    ["hexagons run together with &", "A{{a}} & B{{b}}"],
+    ["double circles run together with ;", "A(((a))); B(((b)))"],
+    ["cylinders run together with &", "A[(a)] & B[(b)]"],
+    ["parallelograms run together with &", "A[/a/] & B[/b/]"],
   ])("refuses %s rather than draw it wrong", (_name, expression) => {
     // Accepted, each would come out as a box with stray brackets in its label, so it must count as skipped.
     expect(parseNodeExpression(expression)).toBeNull();
