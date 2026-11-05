@@ -1,9 +1,22 @@
 import type { PluginTimelineItem } from "@getpaseo/plugin";
 import { drawable } from "./drawable";
-import { segmentMessage } from "./segment";
+import { mermaidFence } from "./fence";
+import { type Segment, segmentMessage } from "./segment";
+
+type MermaidSegment = Extract<Segment, { kind: "mermaid" }>;
 
 export const DIAGRAM_KIND = "mermaid-diagram";
 export const TEXT_KIND = "mermaid-text";
+
+export interface SplitOptions {
+  /**
+   * Whether the app has Paseo's own Markdown (0.13 and later), which draws every
+   * Mermaid diagram type. Then no message with a diagram is left to Paseo: what this
+   * plugin cannot draw goes to that Markdown as a mermaid fence inside the plugin's
+   * own text item. Off by default, which leaves such a message to Paseo.
+   */
+  hostMarkdown?: boolean;
+}
 
 /**
  * Turns one message into the items this plugin renders, or leaves it alone.
@@ -11,23 +24,35 @@ export const TEXT_KIND = "mermaid-text";
  * Pure and synchronous because Paseo reruns transformers while reconciling
  * projected history, and because it is the part worth testing.
  */
-export function split(text: string, phase: "streaming" | "complete"): { items: PluginTimelineItem[] } | undefined {
+export function split(
+  text: string,
+  phase: "streaming" | "complete",
+  options: SplitOptions = {},
+): { items: PluginTimelineItem[] } | undefined {
+  const hostMarkdown = options.hostMarkdown ?? false;
   const segments = segmentMessage(text);
   // Leave the entry alone unless there is a diagram to draw: Paseo renders
   // ordinary Markdown better than this plugin does.
   const diagrams = segments.filter((segment) => segment.kind === "mermaid");
   if (diagrams.length === 0) return undefined;
-  // One diagram the plugin cannot draw in full leaves the whole message to Paseo,
-  // which draws every diagram in it with Mermaid itself.
   // While the message streams, an open fence can still grow; once it is complete,
   // every line is final, including the last line of a fence that never closed.
   const growing = phase === "streaming";
-  const judged = diagrams.every((diagram) =>
-    growing && diagram.pending !== null ? drawable(diagram.finished, diagram.pending) : drawable(diagram.source, null),
-  );
-  if (!judged) return undefined;
+  const drawn = (diagram: MermaidSegment) =>
+    growing && diagram.pending !== null ? drawable(diagram.finished, diagram.pending) : drawable(diagram.source, null);
   // Reference links and footnotes resolve across the whole message; split, they would not.
-  if (segments.some((segment) => segment.kind === "text" && hasDefinition(segment.text))) return undefined;
+  const defined = segments.some((segment) => segment.kind === "text" && hasDefinition(segment.text));
+
+  if (hostMarkdown) {
+    // Paseo's Markdown reads the message in one piece, so the definition finds its link
+    // and it draws the message's diagrams itself.
+    if (defined) return { items: [{ type: "plugin", kind: TEXT_KIND, version: 1, data: { text } }] };
+  } else {
+    // One diagram the plugin cannot draw in full leaves the whole message to Paseo,
+    // which draws every diagram in it with Mermaid itself.
+    if (!diagrams.every(drawn)) return undefined;
+    if (defined) return undefined;
+  }
 
   // Pushed one branch at a time rather than mapped through a ternary: a ternary
   // produces a union of the two shapes, and TypeScript gives the absent members
@@ -35,10 +60,13 @@ export function split(text: string, phase: "streaming" | "complete"): { items: P
   // each literal on its own.
   const items: PluginTimelineItem[] = [];
   for (const segment of segments) {
-    if (segment.kind === "mermaid") {
+    if (segment.kind === "text") {
+      items.push({ type: "plugin", kind: TEXT_KIND, version: 1, data: { text: segment.text } });
+    } else if (!hostMarkdown || drawn(segment)) {
+      // Without Paseo's Markdown every diagram was judged drawable above.
       items.push({ type: "plugin", kind: DIAGRAM_KIND, version: 1, data: { source: segment.source } });
     } else {
-      items.push({ type: "plugin", kind: TEXT_KIND, version: 1, data: { text: segment.text } });
+      items.push({ type: "plugin", kind: TEXT_KIND, version: 1, data: { text: mermaidFence(segment.source) } });
     }
   }
   return { items };

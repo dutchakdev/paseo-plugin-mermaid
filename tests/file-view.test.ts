@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { mermaidFence } from "../shared/fence";
 import { fileView } from "../shared/file-view";
 
 const LAUNCH_ORDER = readFileSync(join(__dirname, "fixtures", "launch-order.mmd"), "utf8");
@@ -25,5 +26,15 @@ describe("fileView", () => {
 
   it("says an empty file is empty rather than drawing nothing", () => {
     expect(fileView("  \n\n")).toEqual({ kind: "empty" });
+  });
+});
+
+describe("mermaidFence", () => {
+  it("fences the source for Paseo's Markdown", () => {
+    expect(mermaidFence("pie\n  a : 1")).toBe("```mermaid\npie\n  a : 1\n```");
+  });
+
+  it("is longer than any backtick run in the source", () => {
+    expect(mermaidFence("a\n```\nb")).toBe("````mermaid\na\n```\nb\n````");
   });
 });

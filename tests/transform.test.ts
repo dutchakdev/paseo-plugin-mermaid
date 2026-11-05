@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { mermaidFence } from "../shared/fence";
 import { DIAGRAM_KIND, split, TEXT_KIND } from "../shared/transform";
 
 const DIAGRAM = "```mermaid\nflowchart TD\n  A --> B\n```";
@@ -95,5 +96,48 @@ describe("split", () => {
 
   it("stamps every item with a version", () => {
     for (const item of split(DIAGRAM, "complete")?.items ?? []) expect(item.version).toBe(1);
+  });
+});
+
+describe("split with Paseo's Markdown", () => {
+  const host = { hostMarkdown: true };
+  const SUBGRAPH = "flowchart TD\n  subgraph S\n    A --> B\n  end";
+
+  it("draws a pie chart through Mermaid instead of leaving the message", () => {
+    const result = split('Intro\n\n```mermaid\npie title Pets\n  "Dogs" : 3\n```', "complete", host);
+    expect(result?.items.map((item) => item.kind)).toEqual([TEXT_KIND, TEXT_KIND]);
+    expect(result?.items[1].data).toEqual({ text: mermaidFence('pie title Pets\n  "Dogs" : 3') });
+  });
+
+  it("keeps an inline diagram and a Mermaid one in message order", () => {
+    const result = split(`Before\n\n${DIAGRAM}\n\nBetween\n\n${mermaidFence(SUBGRAPH)}`, "complete", host);
+    expect(result?.items.map((item) => item.kind)).toEqual([TEXT_KIND, DIAGRAM_KIND, TEXT_KIND, TEXT_KIND]);
+    expect(result?.items[3].data).toEqual({ text: mermaidFence(SUBGRAPH) });
+  });
+
+  it("keeps a message with a link definition whole", () => {
+    // Each prose item is a Markdown document of its own, so Paseo's Markdown gets the message in one piece.
+    const text = `See [docs][d].\n\n${DIAGRAM}\n\n[d]: https://example.com`;
+    const result = split(text, "complete", host);
+    expect(result?.items.map((item) => item.kind)).toEqual([TEXT_KIND]);
+    expect(result?.items[0].data).toEqual({ text });
+  });
+
+  it("still leaves a message without a diagram alone", () => {
+    expect(split("plain", "complete", host)).toBeUndefined();
+  });
+
+  it("uses a fence longer than any backtick run", () => {
+    const source = 'flowchart TD\n  A["a ``` b"] --> B\n  subgraph S\n    C\n  end';
+    const result = split(`\`\`\`\`mermaid\n${source}\n\`\`\`\``, "complete", host);
+    const { text } = result?.items[0].data as { text: string };
+    expect(text.startsWith("````mermaid\n")).toBe(true);
+    expect(text.endsWith("\n````")).toBe(true);
+  });
+
+  it("behaves as before without Paseo's Markdown", () => {
+    const pie = 'Intro\n\n```mermaid\npie title Pets\n  "Dogs" : 3\n```';
+    expect(split(pie, "complete", { hostMarkdown: false })).toBeUndefined();
+    expect(split(pie, "complete")).toBeUndefined();
   });
 });

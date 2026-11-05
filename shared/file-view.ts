@@ -1,4 +1,5 @@
 import { drawable } from "./drawable";
+import { mermaidFence } from "./fence";
 
 export type FileView = { kind: "empty" } | { kind: "diagram"; source: string } | { kind: "markdown"; markdown: string };
 
@@ -11,9 +12,5 @@ export function fileView(text: string): FileView {
   const source = text.trim();
   if (source.length === 0) return { kind: "empty" };
   if (drawable(source, null)) return { kind: "diagram", source };
-  // A fence closes on a run of backticks at least as long as its own, so it must
-  // be longer than any run inside the source.
-  const longest = Math.max(2, ...(source.match(/`+/g) ?? []).map((run) => run.length));
-  const fence = "`".repeat(longest + 1);
-  return { kind: "markdown", markdown: `${fence}mermaid\n${source}\n${fence}` };
+  return { kind: "markdown", markdown: mermaidFence(source) };
 }
