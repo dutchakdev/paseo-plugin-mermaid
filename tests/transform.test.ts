@@ -166,3 +166,48 @@ describe("split where the app cannot skew a View", () => {
     expect(split(mermaidFence(LEAN), "complete")?.items[0].kind).toBe(DIAGRAM_KIND);
   });
 });
+
+describe("split handing Paseo a diagram with shape objects", () => {
+  const host = { hostMarkdown: true };
+  // The subgraph is why the plugin does not draw it; Paseo's Mermaid refuses any source with `@{`.
+  const OBJECTS = 'flowchart LR\n  A@{ shape: db, label: "Orders DB" } --> B\n  subgraph S\n    B --> C@{ shape: hex }\n  end';
+
+  it("writes the objects as bracket syntax in the fence", () => {
+    const result = split(`Intro\n\n${mermaidFence(OBJECTS)}`, "complete", host);
+    expect(result?.items.map((item) => item.kind)).toEqual([TEXT_KIND, TEXT_KIND]);
+    const { text } = result?.items[1].data as { text: string };
+    expect(text).toContain('A[("Orders DB")]');
+    expect(text).toContain('C{{"C"}}');
+    expect(text).not.toContain("@{");
+    expect(text).toBe(
+      mermaidFence('flowchart LR\n  A[("Orders DB")] --> B\n  subgraph S\n    B --> C{{"C"}}\n  end'),
+    );
+  });
+
+  it("leaves an object it cannot write as brackets in the fence", () => {
+    const source = 'flowchart LR\n  A@{ shape: cloud } --> B\n  subgraph S\n    B\n  end';
+    expect(split(mermaidFence(source), "complete", host)?.items[0].data).toEqual({ text: mermaidFence(source) });
+  });
+
+  it("still draws a diagram of shape objects inline from its own source", () => {
+    const source = 'flowchart LR\n  A@{ shape: db, label: "Orders DB" } --> B';
+    expect(split(mermaidFence(source), "complete", host)?.items).toEqual([
+      { type: "plugin", kind: DIAGRAM_KIND, version: 1, data: { source } },
+    ]);
+  });
+
+  it("rewrites the one that goes to Paseo and not the one drawn here", () => {
+    const drawn = "flowchart LR\n  A@{ shape: db } --> B";
+    const result = split(`${mermaidFence(drawn)}\n\n${mermaidFence(OBJECTS)}`, "complete", host);
+    expect(result?.items.map((item) => item.kind)).toEqual([DIAGRAM_KIND, TEXT_KIND]);
+    expect(result?.items[0].data).toEqual({ source: drawn });
+    expect((result?.items[1].data as { text: string }).text).not.toContain("@{");
+  });
+
+  it("hands a diagram Paseo cannot skew for this app over without objects too", () => {
+    const source = 'flowchart LR\n  A@{ shape: lean-r, label: "in" } --> B';
+    const result = split(mermaidFence(source), "complete", { hostMarkdown: true, skew: false });
+    expect(result?.items[0].kind).toBe(TEXT_KIND);
+    expect(result?.items[0].data).toEqual({ text: mermaidFence('flowchart LR\n  A[/"in"/] --> B') });
+  });
+});

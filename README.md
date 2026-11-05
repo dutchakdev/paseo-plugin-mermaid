@@ -94,6 +94,11 @@ paseo plugin install "$PWD"
 
 A node given twice takes the last label and shape, as in Mermaid.
 
+Paseo's Mermaid refuses any source with `@{`, so a diagram that goes to it has each
+shape object the plugin reads written as bracket syntax first (`A@{ shape: db }`
+becomes `A[("A")]`). An object the plugin does not read, such as `shape: cloud` or
+`img:`, stays as written and shows as code.
+
 Everything else is rendered by Mermaid: other diagram types, subgraphs, other
 shape names and keys in `@{ }`, Markdown string labels, `style` and `classDef`
 lines, `&` and `;` joining nodes or statements on one line, sequence blocks such

@@ -1,6 +1,7 @@
 import type { PluginTimelineItem } from "@getpaseo/plugin";
 import { drawable } from "./drawable";
 import { mermaidFence } from "./fence";
+import { classicShapes } from "./flowchart";
 import { type Segment, segmentMessage } from "./segment";
 
 type MermaidSegment = Extract<Segment, { kind: "mermaid" }>;
@@ -71,7 +72,7 @@ export function split(
       // Without Paseo's Markdown every diagram was judged drawable above.
       items.push({ type: "plugin", kind: DIAGRAM_KIND, version: 1, data: { source: segment.source } });
     } else {
-      items.push({ type: "plugin", kind: TEXT_KIND, version: 1, data: { text: mermaidFence(segment.source) } });
+      items.push({ type: "plugin", kind: TEXT_KIND, version: 1, data: { text: mermaidFence(classicShapes(segment.source)) } });
     }
   }
   return { items };

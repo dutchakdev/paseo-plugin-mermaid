@@ -1,5 +1,6 @@
 import { type DrawableOptions, drawable } from "./drawable";
 import { mermaidFence } from "./fence";
+import { classicShapes } from "./flowchart";
 
 export type FileView = { kind: "empty" } | { kind: "diagram"; source: string } | { kind: "markdown"; markdown: string };
 
@@ -12,5 +13,5 @@ export function fileView(text: string, options: DrawableOptions = {}): FileView 
   const source = text.trim();
   if (source.length === 0) return { kind: "empty" };
   if (drawable(source, null, options)) return { kind: "diagram", source };
-  return { kind: "markdown", markdown: mermaidFence(source) };
+  return { kind: "markdown", markdown: mermaidFence(classicShapes(source)) };
 }

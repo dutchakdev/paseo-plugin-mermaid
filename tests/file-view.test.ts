@@ -30,6 +30,26 @@ describe("fileView", () => {
     expect(fileView(source)).toEqual({ kind: "diagram", source });
   });
 
+  it("writes shape objects as bracket syntax, which Paseo's Mermaid accepts where it refuses @{", () => {
+    const source = 'flowchart LR\n  A@{ shape: db, label: "Orders DB" } --> B\n  subgraph S\n    B --> C@{ shape: hex }\n  end';
+    const view = fileView(source);
+    expect(view).toEqual({
+      kind: "markdown",
+      markdown: mermaidFence('flowchart LR\n  A[("Orders DB")] --> B\n  subgraph S\n    B --> C{{"C"}}\n  end'),
+    });
+    expect(JSON.stringify(view)).not.toContain("@{");
+  });
+
+  it("leaves an object it cannot write as brackets in the fenced source", () => {
+    const source = "flowchart LR\n  A@{ shape: cloud } --> B\n  subgraph S\n    B\n  end";
+    expect(fileView(source)).toEqual({ kind: "markdown", markdown: mermaidFence(source) });
+  });
+
+  it("draws a diagram of shape objects from its own source", () => {
+    const source = 'flowchart LR\n  A@{ shape: db, label: "Orders DB" } --> B';
+    expect(fileView(source)).toEqual({ kind: "diagram", source });
+  });
+
   it("says an empty file is empty rather than drawing nothing", () => {
     expect(fileView("  \n\n")).toEqual({ kind: "empty" });
   });
