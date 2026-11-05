@@ -141,3 +141,28 @@ describe("split with Paseo's Markdown", () => {
     expect(split(pie, "complete")).toBeUndefined();
   });
 });
+
+describe("split where the app cannot skew a View", () => {
+  const LEAN = "flowchart LR\n  A[/in/] --> B";
+  const CYLINDER = "flowchart LR\n  A[(db)] --> B{{prep}}";
+
+  it("hands a diagram with a slanted node to Paseo's Markdown as a mermaid fence", () => {
+    const result = split(`Intro\n\n${mermaidFence(LEAN)}`, "complete", { hostMarkdown: true, skew: false });
+    expect(result?.items.map((item) => item.kind)).toEqual([TEXT_KIND, TEXT_KIND]);
+    expect(result?.items[1].data).toEqual({ text: mermaidFence(LEAN) });
+  });
+
+  it("leaves the message to Paseo on apps without Paseo's Markdown", () => {
+    expect(split(`Intro\n\n${mermaidFence(LEAN)}`, "complete", { hostMarkdown: false, skew: false })).toBeUndefined();
+  });
+
+  it("still draws shapes that need no skew", () => {
+    const result = split(mermaidFence(CYLINDER), "complete", { hostMarkdown: true, skew: false });
+    expect(result?.items.map((item) => item.kind)).toEqual([DIAGRAM_KIND]);
+  });
+
+  it("draws the slanted diagram where the app can skew, as by default", () => {
+    expect(split(mermaidFence(LEAN), "complete", { hostMarkdown: true, skew: true })?.items[0].kind).toBe(DIAGRAM_KIND);
+    expect(split(mermaidFence(LEAN), "complete")?.items[0].kind).toBe(DIAGRAM_KIND);
+  });
+});

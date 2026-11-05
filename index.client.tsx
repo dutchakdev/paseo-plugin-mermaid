@@ -2,6 +2,7 @@ import type { PluginClientContext } from "@getpaseo/plugin/client";
 import * as ui from "@getpaseo/plugin/client/ui";
 import { z } from "zod";
 import { addFilePanel, hostMarkdown } from "./client/compat";
+import { canSkew } from "./client/diagram";
 import { MermaidFilePanel } from "./client/file-panel";
 import { DiagramItem, TextItem } from "./client/item";
 import { DIAGRAM_KIND, split, TEXT_KIND } from "./shared/transform";
@@ -31,7 +32,9 @@ const hostMarkdownAvailable = hostMarkdown(ui) !== null;
  * What this plugin cannot draw in full (see `shared/drawable.ts`) goes to Paseo's
  * Markdown, which runs Mermaid, as a mermaid fence inside the plugin's own text item,
  * so a message with a diagram is never left to Paseo on 0.13 and later. Apps before
- * 0.13 have no such Markdown; there such a message is left to Paseo whole.
+ * 0.13 have no such Markdown; there such a message is left to Paseo whole. On
+ * Android, where React Native cannot shear a View, a diagram with a parallelogram
+ * or trapezoid counts as one this plugin does not draw (`canSkew`).
  *
  * Everything here runs in the app. The plugin has no server entry and starts no
  * daemon process.
@@ -42,12 +45,12 @@ export default function contribute(client: PluginClientContext) {
   client.addTimelineTransformer({
     id: "mermaid-assistant",
     query: { itemType: "assistant_message" },
-    transform: ({ item, phase }) => split(item.text, phase, { hostMarkdown: hostMarkdownAvailable }),
+    transform: ({ item, phase }) => split(item.text, phase, { hostMarkdown: hostMarkdownAvailable, skew: canSkew }),
   });
   client.addTimelineTransformer({
     id: "mermaid-user",
     query: { itemType: "user_message" },
-    transform: ({ item, phase }) => split(item.text, phase, { hostMarkdown: hostMarkdownAvailable }),
+    transform: ({ item, phase }) => split(item.text, phase, { hostMarkdown: hostMarkdownAvailable, skew: canSkew }),
   });
 
   client.addTimelineRenderer({

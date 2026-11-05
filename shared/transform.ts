@@ -16,6 +16,8 @@ export interface SplitOptions {
    * own text item. Off by default, which leaves such a message to Paseo.
    */
   hostMarkdown?: boolean;
+  /** Whether the app can shear a View; see `DrawableOptions`. True by default. */
+  skew?: boolean;
 }
 
 /**
@@ -30,6 +32,7 @@ export function split(
   options: SplitOptions = {},
 ): { items: PluginTimelineItem[] } | undefined {
   const hostMarkdown = options.hostMarkdown ?? false;
+  const judge = { skew: options.skew ?? true };
   const segments = segmentMessage(text);
   // Leave the entry alone unless there is a diagram to draw: Paseo renders
   // ordinary Markdown better than this plugin does.
@@ -39,7 +42,9 @@ export function split(
   // every line is final, including the last line of a fence that never closed.
   const growing = phase === "streaming";
   const drawn = (diagram: MermaidSegment) =>
-    growing && diagram.pending !== null ? drawable(diagram.finished, diagram.pending) : drawable(diagram.source, null);
+    growing && diagram.pending !== null
+      ? drawable(diagram.finished, diagram.pending, judge)
+      : drawable(diagram.source, null, judge);
   // Reference links and footnotes resolve across the whole message; split, they would not.
   const defined = segments.some((segment) => segment.kind === "text" && hasDefinition(segment.text));
 

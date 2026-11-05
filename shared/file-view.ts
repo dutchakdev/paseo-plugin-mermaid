@@ -1,4 +1,4 @@
-import { drawable } from "./drawable";
+import { type DrawableOptions, drawable } from "./drawable";
 import { mermaidFence } from "./fence";
 
 export type FileView = { kind: "empty" } | { kind: "diagram"; source: string } | { kind: "markdown"; markdown: string };
@@ -8,9 +8,9 @@ export type FileView = { kind: "empty" } | { kind: "diagram"; source: string } |
  * the whole diagram, otherwise a mermaid fence for Paseo's Markdown, which renders
  * the diagram with Mermaid itself. The file is complete, so nothing is still arriving.
  */
-export function fileView(text: string): FileView {
+export function fileView(text: string, options: DrawableOptions = {}): FileView {
   const source = text.trim();
   if (source.length === 0) return { kind: "empty" };
-  if (drawable(source, null)) return { kind: "diagram", source };
+  if (drawable(source, null, options)) return { kind: "diagram", source };
   return { kind: "markdown", markdown: mermaidFence(source) };
 }

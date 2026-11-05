@@ -1,6 +1,6 @@
 import type { PluginTheme } from "@getpaseo/plugin";
 import React from "react";
-import { StyleSheet, Text, View, type StyleProp, type ViewStyle } from "react-native";
+import { Platform, StyleSheet, Text, View, type StyleProp, type ViewStyle } from "react-native";
 import { parseFlowchart, type Flowchart, type NodeShape } from "../shared/flowchart";
 import {
   CYLINDER_CAP,
@@ -31,6 +31,14 @@ import type { Size } from "../shared/zoom";
  */
 
 const ARROW = 5;
+
+/**
+ * Whether this app can shear a View, which the parallelograms and trapezoids need.
+ * React Native on Android drops `skewX`, so there a diagram with one of them goes to
+ * Mermaid as soon as the line that gives the shape has finished (`drawable`'s
+ * `skew` option).
+ */
+export const canSkew = Platform.OS !== "android";
 
 export type ParsedDiagram =
   | { kind: "flow"; layout: FlowLayout; skipped: Flowchart["skipped"] }
@@ -391,8 +399,9 @@ function Outline({ node, theme }: { node: LaidOutNode; theme: PluginTheme }) {
  * The slant is the layout's own, which is what puts the side where a horizontal
  * edge stops. `left` is where the box starts inside a clipping parent.
  *
- * React Native on Android applies no skew and draws this as the upright View
- * between the two mid-height points, still closed and still met by the edges.
+ * React Native on Android applies no skew and leaves the upright View between the
+ * two mid-height points. There a diagram with these shapes goes to Mermaid
+ * (`canSkew`), so that box shows only while the line giving the shape is typed.
  */
 function Parallelogram({
   node,

@@ -72,3 +72,36 @@ describe("drawable, while the diagram is still growing", () => {
     expect(drawable("flowchart-elk TD", "  A")).toBe(false);
   });
 });
+
+describe("drawable, where the app cannot skew a View", () => {
+  // React Native on Android drops `skewX`, so a slanted node would be drawn as an upright box.
+  const noSkew = { skew: false };
+
+  it.each([
+    ["a parallelogram leaning right", "flowchart LR\n  A[/in/] --> B"],
+    ["a parallelogram leaning left", "flowchart LR\n  A[\\out\\] --> B"],
+    ["a trapezoid", "flowchart LR\n  A[/base\\] --> B"],
+    ["an upside-down trapezoid", "flowchart LR\n  A[\\top/] --> B"],
+    ["a Mermaid 11 shape object naming a slanted shape", "flowchart LR\n  A@{ shape: lean-r } --> B"],
+  ])("hands over %s", (_name, source) => {
+    expect(drawable(source, null, noSkew)).toBe(false);
+    expect(drawable(source, null)).toBe(true);
+  });
+
+  it("keeps the shapes it draws without skew: cylinders, hexagons, circles, diamonds", () => {
+    expect(drawable("flowchart TD\n  A[(db)] --> B{{prep}}\n  B --> C(((done)))\n  C --> D{ok?}", null, noSkew)).toBe(true);
+    expect(drawable(VIBER_ARCHITECTURE, null, noSkew)).toBe(true);
+  });
+
+  it("hands over while growing as soon as a finished line has a slanted node", () => {
+    expect(drawable("flowchart LR\n  A[/in/] --> B", "  B --> C", noSkew)).toBe(false);
+  });
+
+  it("does not judge a slanted node on the line still being typed", () => {
+    expect(drawable("flowchart LR\n  A --> B", "  B --> C[/out/]", noSkew)).toBe(true);
+  });
+
+  it("does not take a diagram back when a later line redefines the slanted node as a box", () => {
+    expect(drawable("flowchart LR\n  A[/in/] --> B\n  A[in]", null, noSkew)).toBe(false);
+  });
+});

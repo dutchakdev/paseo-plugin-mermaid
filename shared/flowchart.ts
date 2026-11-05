@@ -46,6 +46,12 @@ export interface Flowchart {
   edges: FlowEdge[];
   /** Lines the parser chose not to interpret, so the UI can say so. */
   skipped: string[];
+  /**
+   * Every shape a mention gave, once each, in the order first given, including one a
+   * later mention replaced. What the source has asked for so far only ever grows as
+   * lines arrive, which a decision made while a diagram streams can rely on.
+   */
+  shapes: NodeShape[];
 }
 
 const DIRECTIVE = /%%\{/;
@@ -386,9 +392,11 @@ export function parseFlowchart(source: string): Flowchart | null {
   const nodes = new Map<string, FlowNode>();
   const edges: FlowEdge[] = [];
   const skipped: string[] = [];
+  const shapes = new Set<NodeShape>();
 
   // Last wins, as in Mermaid: a mention that gives a label replaces the label, one that gives a shape replaces the shape, and a bare id changes neither.
   const remember = ({ node, labelled, shaped }: NodeMention) => {
+    if (shaped) shapes.add(node.shape);
     const existing = nodes.get(node.id);
     nodes.set(
       node.id,
@@ -453,5 +461,5 @@ export function parseFlowchart(source: string): Flowchart | null {
   }
 
   if (direction === null) return null;
-  return { direction, nodes: [...nodes.values()], edges, skipped };
+  return { direction, nodes: [...nodes.values()], edges, skipped, shapes: [...shapes] };
 }

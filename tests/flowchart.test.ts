@@ -434,6 +434,12 @@ describe("parseFlowchart redefining a node", () => {
     expect(node(["A --> B", "A((A))"])).toEqual({ id: "A", label: "A", shape: "circle" });
   });
 
+  it("still lists a shape that a later mention replaced among the shapes the source gave", () => {
+    const chart = parseFlowchart("flowchart TD\n  A[/in/] --> B\n  A[in]");
+    expect(chart?.nodes.find((candidate) => candidate.id === "A")?.shape).toBe("rect");
+    expect(chart?.shapes).toEqual(["lean-right", "rect"]);
+  });
+
   it("takes the later of two labels", () => {
     expect(node(["A[x]", "A[y]"])).toEqual({ id: "A", label: "y", shape: "rect" });
     expect(node(["A{x}", "A[y]"])).toEqual({ id: "A", label: "y", shape: "rect" });

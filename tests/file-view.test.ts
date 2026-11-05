@@ -24,6 +24,12 @@ describe("fileView", () => {
     expect(view).toEqual({ kind: "markdown", markdown: '````mermaid\nclassDiagram\n  note "run ```make```"\n````' });
   });
 
+  it("hands a diagram with a slanted node to Paseo's Markdown where the app cannot skew", () => {
+    const source = "flowchart LR\n  A[/in/] --> B";
+    expect(fileView(source, { skew: false })).toEqual({ kind: "markdown", markdown: "```mermaid\n" + source + "\n```" });
+    expect(fileView(source)).toEqual({ kind: "diagram", source });
+  });
+
   it("says an empty file is empty rather than drawing nothing", () => {
     expect(fileView("  \n\n")).toEqual({ kind: "empty" });
   });

@@ -118,7 +118,7 @@ describe("layoutFlowchart", () => {
   });
 
   it("survives an edge pointing at a node that was never defined", () => {
-    const layout = layoutFlowchart({ direction: "TD", nodes: [], edges: [{ from: "A", to: "B", label: null, style: "solid", arrow: true }], skipped: [] });
+    const layout = layoutFlowchart({ direction: "TD", nodes: [], edges: [{ from: "A", to: "B", label: null, style: "solid", arrow: true }], skipped: [], shapes: [] });
     expect(layout.edges[0].segments).toEqual([]);
   });
 });

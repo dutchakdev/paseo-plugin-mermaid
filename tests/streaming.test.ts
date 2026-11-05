@@ -54,3 +54,25 @@ describe("streaming a diagram through Paseo's Markdown", () => {
     expect(switched).toBe(true);
   });
 });
+
+describe("streaming a slanted diagram where the app cannot skew a View", () => {
+  const message = fence("flowchart LR\n  A --> B\n  B --> C[/out/]\n  C --> D");
+  const opened = message.indexOf("```mermaid") + "```mermaid".length;
+  // The slanted node counts once its line has finished, not while it is typed.
+  const handedOverAt = message.indexOf("  B --> C[/out/]\n") + "  B --> C[/out/]\n".length;
+
+  it("moves to Mermaid through Paseo's Markdown once, at that line", () => {
+    for (let end = opened; end <= message.length; end += 1) {
+      const items = split(message.slice(0, end), "streaming", { hostMarkdown: true, skew: false })?.items ?? [];
+      expect(items).toHaveLength(1);
+      expect(items[0].kind, message.slice(0, end)).toBe(end >= handedOverAt ? TEXT_KIND : DIAGRAM_KIND);
+    }
+  });
+
+  it("is left to Paseo once, at that line, on apps without Paseo's Markdown", () => {
+    for (let end = opened; end <= message.length; end += 1) {
+      const claimed = split(message.slice(0, end), "streaming", { hostMarkdown: false, skew: false }) !== undefined;
+      expect(claimed, message.slice(0, end)).toBe(end < handedOverAt);
+    }
+  });
+});
