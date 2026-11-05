@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { normalizeEdgeLabels, parseFlowchart, parseNodeExpression, splitChain } from "../shared/flowchart";
+import {
+  normalizeEdgeLabels,
+  parseFlowchart,
+  parseNodeExpression,
+  shapeFromName,
+  splitChain,
+  type NodeShape,
+} from "../shared/flowchart";
 
 describe("parseNodeExpression", () => {
   it.each([
@@ -72,6 +79,124 @@ describe("parseNodeExpression", () => {
   });
 });
 
+/** Mermaid 11.16 short names and aliases for the shapes the plugin draws. */
+const SHAPE_NAMES: [NodeShape, string[]][] = [
+  ["rect", ["rect", "proc", "process", "rectangle"]],
+  ["round", ["rounded", "event"]],
+  ["stadium", ["stadium", "terminal", "pill"]],
+  ["subroutine", ["fr-rect", "subprocess", "subproc", "framed-rectangle", "subroutine"]],
+  ["cylinder", ["cyl", "db", "database", "cylinder"]],
+  ["circle", ["circle", "circ"]],
+  ["diamond", ["diam", "decision", "diamond", "question"]],
+  ["hexagon", ["hex", "hexagon", "prepare"]],
+  ["lean-right", ["lean-r", "lean-right", "in-out"]],
+  ["lean-left", ["lean-l", "lean-left", "out-in"]],
+  ["trapezoid", ["trap-b", "priority", "trapezoid-bottom", "trapezoid"]],
+  ["trapezoid-top", ["trap-t", "manual", "trapezoid-top", "inv-trapezoid"]],
+  ["double-circle", ["dbl-circ", "double-circle"]],
+];
+
+describe("shapeFromName", () => {
+  it.each(SHAPE_NAMES.flatMap(([shape, names]) => names.map((name) => [name, shape] as const)))(
+    "maps %s to %s",
+    (name, shape) => {
+      expect(shapeFromName(name)).toBe(shape);
+    },
+  );
+
+  it("returns null for a name the plugin does not draw, or one Mermaid spells differently", () => {
+    expect(shapeFromName("cloud")).toBeNull();
+    expect(shapeFromName("Cyl")).toBeNull();
+    expect(shapeFromName("constructor")).toBeNull();
+    expect(shapeFromName("")).toBeNull();
+  });
+});
+
+describe("parseNodeExpression shape objects", () => {
+  it("reads a shape object", () => {
+    expect(parseNodeExpression('A@{ shape: cyl, label: "Orders DB" }')).toEqual({
+      id: "A",
+      label: "Orders DB",
+      shape: "cylinder",
+    });
+  });
+
+  it("uses the id as the label when the object has none", () => {
+    expect(parseNodeExpression("A@{ shape: cyl }")).toEqual({ id: "A", label: "A", shape: "cylinder" });
+    expect(parseNodeExpression('A@{ shape: cyl, label: "" }')).toEqual({ id: "A", label: "A", shape: "cylinder" });
+  });
+
+  it("reads unquoted, single-quoted and double-quoted values, in either order", () => {
+    expect(parseNodeExpression("A@{ shape: db, label: Orders }")).toMatchObject({ label: "Orders", shape: "cylinder" });
+    expect(parseNodeExpression("A@{ label: Orders DB, shape: db }")).toMatchObject({ label: "Orders DB" });
+    expect(parseNodeExpression("A@{ shape: 'db', label: 'Orders' }")).toMatchObject({ label: "Orders", shape: "cylinder" });
+    expect(parseNodeExpression('A@{ shape: "db", label: "Orders" }')).toMatchObject({ label: "Orders", shape: "cylinder" });
+    expect(parseNodeExpression("A@{shape: db,label: x}")).toMatchObject({ label: "x", shape: "cylinder" });
+  });
+
+  it("lets a quoted label hold the characters that would end an unquoted one", () => {
+    expect(parseNodeExpression('A@{ shape: hex, label: "x, y: z } w" }')?.label).toBe("x, y: z } w");
+    expect(parseNodeExpression("A@{ shape: hex, label: 'a, b: {c}' }")?.label).toBe("a, b: {c}");
+    expect(parseNodeExpression('A@{ shape: hex, label: "a --> b" }')?.label).toBe("a --> b");
+  });
+
+  it("turns <br/> into a line break and reads a node id with dots and dashes", () => {
+    expect(parseNodeExpression('node-1.a@{ shape: db, label: "one<br/>two" }')).toEqual({
+      id: "node-1.a",
+      label: "one\ntwo",
+      shape: "cylinder",
+    });
+  });
+
+  it("reads a spaced id like the bracket shapes do", () => {
+    expect(parseNodeExpression("A @{ shape: db }")).toMatchObject({ id: "A", shape: "cylinder" });
+  });
+
+  it.each([
+    ["img", 'A@{ shape: cyl, img: "https://x.test/a.png" }'],
+    ["icon", 'A@{ shape: cyl, icon: "fa:user" }'],
+    ["pos", "A@{ shape: cyl, pos: b }"],
+    ["constraint", "A@{ shape: cyl, constraint: on }"],
+    ["w", "A@{ shape: cyl, w: 100 }"],
+    ["h", "A@{ shape: cyl, h: 100 }"],
+    ["form", "A@{ shape: cyl, form: square }"],
+    ["an unknown shape", "A@{ shape: cloud }"],
+    ["an unknown shape with a label", 'A@{ shape: cloud, label: "x" }'],
+    ["an unclosed object", "A@{ shape: cyl"],
+    ["an unclosed quote", 'A@{ shape: cyl, label: "x }'],
+    ["a missing shape", 'A@{ label: "x" }'],
+    ["an empty object", "A@{}"],
+    ["an upper-case shape name", "A@{ shape: Cyl }"],
+    ["a repeated key", "A@{ shape: cyl, shape: hex }"],
+    ["a repeated label", 'A@{ shape: cyl, label: "a", label: "b" }'],
+    ["a trailing comma", "A@{ shape: cyl, }"],
+    ["a missing value", "A@{ shape: }"],
+    ["a key without a colon", "A@{ shape cyl }"],
+    ["no space after the colon", "A@{ shape:cyl }"],
+    ["an escaped quote", 'A@{ shape: cyl, label: "say \\"hi\\"" }'],
+    ["a Markdown string label", 'A@{ shape: cyl, label: "`**bold**`" }'],
+    ["an unquoted label with a bracket", "A@{ shape: cyl, label: a[0] }"],
+    ["an unquoted label with a colon", "A@{ shape: cyl, label: a: b }"],
+    ["an unquoted label with an apostrophe", "A@{ shape: cyl, label: Bob's }"],
+    ["text after the object", "A@{ shape: cyl } & B"],
+    ["a second object", "A@{ shape: cyl } B@{ shape: hex }"],
+    ["a bracket label after the object", "A@{ shape: cyl }[x]"],
+    ["a quoted key", 'A@{ "shape": cyl }'],
+    ["an id that is not an id", "a b@{ shape: cyl }"],
+    ["an id run into a bracket shape", "A[x]@{ shape: cyl }"],
+  ])("refuses %s rather than draw it wrong", (_name, expression) => {
+    expect(parseNodeExpression(expression)).toBeNull();
+  });
+
+  it("leaves a quoted bracket label that happens to mention @{ alone", () => {
+    expect(parseNodeExpression('A["use @{ shape: x } here"]')).toMatchObject({
+      id: "A",
+      label: "use @{ shape: x } here",
+      shape: "rect",
+    });
+  });
+});
+
 describe("splitChain", () => {
   it("reads a chain of three nodes as two edges", () => {
     const chain = splitChain("A --> B --> C");
@@ -96,6 +221,20 @@ describe("splitChain", () => {
   it("returns null when there is no edge at all", () => {
     expect(splitChain("A[Just a node]")).toBeNull();
   });
+
+  it("keeps a shape object whole, whatever it holds", () => {
+    const chain = splitChain('A@{ shape: db, label: "a --> b, c ==> d" } --> B@{ shape: hex } -.-> C');
+    expect(chain?.parts.map((part) => part.trim())).toEqual([
+      'A@{ shape: db, label: "a --> b, c ==> d" }',
+      "B@{ shape: hex }",
+      "C",
+    ]);
+    expect(chain?.operators).toHaveLength(2);
+  });
+
+  it("finds no edge inside a lone shape object", () => {
+    expect(splitChain('A@{ shape: db, label: "a --> b" }')).toBeNull();
+  });
 });
 
 describe("normalizeEdgeLabels", () => {
@@ -106,6 +245,12 @@ describe("normalizeEdgeLabels", () => {
 
   it("leaves a plain arrow alone", () => {
     expect(normalizeEdgeLabels("A --> B")).toBe("A --> B");
+  });
+
+  it("leaves the inside of a shape object alone", () => {
+    expect(normalizeEdgeLabels('A@{ shape: db, label: "x -- y --> z" } -- yes --> B')).toBe(
+      'A@{ shape: db, label: "x -- y --> z" } -->|yes| B',
+    );
   });
 });
 
@@ -163,5 +308,89 @@ describe("parseFlowchart", () => {
     const chart = parseFlowchart("flowchart TD\n A --> B\n style A fill:#f9f");
     expect(chart?.nodes).toHaveLength(2);
     expect(chart?.skipped).toEqual(["style A fill:#f9f"]);
+  });
+
+  it("reads a shape object inside an edge chain", () => {
+    const chart = parseFlowchart('flowchart LR\n  A@{ shape: hex, label: "x, y: z" } --> B');
+    expect(chart?.nodes).toEqual([
+      { id: "A", label: "x, y: z", shape: "hexagon" },
+      { id: "B", label: "B", shape: "rect" },
+    ]);
+    expect(chart?.edges).toEqual([{ from: "A", to: "B", label: null, style: "solid", arrow: true }]);
+    expect(chart?.skipped).toEqual([]);
+  });
+
+  it("reads shape objects at both ends of a labelled edge", () => {
+    const chart = parseFlowchart(
+      'flowchart LR\n  A@{ shape: db, label: "a, b" } -- "uses {it}" --> B@{ shape: trap-t };',
+    );
+    expect(chart?.nodes.map((node) => [node.id, node.shape])).toEqual([
+      ["A", "cylinder"],
+      ["B", "trapezoid-top"],
+    ]);
+    expect(chart?.edges).toHaveLength(1);
+    expect(chart?.edges[0].label).toBe("uses {it}");
+    expect(chart?.skipped).toEqual([]);
+  });
+
+  it("reads a shape object on its own line, and later edges reuse its id", () => {
+    const chart = parseFlowchart(
+      'flowchart TD\n  A@{ shape: cyl, label: "Orders --> DB" }\n  B@{ shape: dbl-circ }\n  A --> B\n  B --> C',
+    );
+    expect(chart?.nodes.map((node) => [node.id, node.label, node.shape])).toEqual([
+      ["A", "Orders --> DB", "cylinder"],
+      ["B", "B", "double-circle"],
+      ["C", "C", "rect"],
+    ]);
+    expect(chart?.edges.map((edge) => [edge.from, edge.to])).toEqual([
+      ["A", "B"],
+      ["B", "C"],
+    ]);
+    expect(chart?.skipped).toEqual([]);
+  });
+
+  it("lets a labelled shape object replace an earlier bare mention", () => {
+    const chart = parseFlowchart('flowchart TD\n  A --> B\n  A@{ shape: cyl, label: "Orders" }');
+    expect(chart?.nodes.find((node) => node.id === "A")).toEqual({ id: "A", label: "Orders", shape: "cylinder" });
+  });
+
+  it("lets a shape object with no label change the shape of a node already drawn", () => {
+    const bare = parseFlowchart("flowchart TD\n  A --> B\n  A@{ shape: db }");
+    expect(bare?.nodes.find((node) => node.id === "A")).toEqual({ id: "A", label: "A", shape: "cylinder" });
+
+    const labelled = parseFlowchart("flowchart TD\n  A[Orders] --> B\n  A@{ shape: db }");
+    expect(labelled?.nodes.find((node) => node.id === "A")).toEqual({ id: "A", label: "Orders", shape: "cylinder" });
+  });
+
+  it("keeps the shape of a node when a later edge mentions it by id", () => {
+    const chart = parseFlowchart("flowchart TD\n  A@{ shape: db }\n  B --> A");
+    expect(chart?.nodes.find((node) => node.id === "A")?.shape).toBe("cylinder");
+  });
+
+  it.each([
+    ["img", 'A@{ shape: cyl, img: "https://x.test/a.png", label: "x" } --> B'],
+    ["icon", 'A@{ icon: "fa:user", form: "square", label: "x" } --> B'],
+    ["pos", "A@{ shape: cyl, pos: b } --> B"],
+    ["constraint", "A@{ shape: cyl, constraint: on } --> B"],
+    ["w", "A@{ shape: cyl, w: 100 } --> B"],
+    ["h", "A@{ shape: cyl, h: 100 } --> B"],
+    ["form", "A@{ shape: cyl, form: square } --> B"],
+    ["an unknown shape", "A@{ shape: cloud } --> B"],
+    ["an unclosed object", "A@{ shape: cyl"],
+    ["an unclosed object in a chain", "A@{ shape: cyl --> B"],
+    ["a bare object with another key", "A@{ shape: cyl, img: x }"],
+    ["an edge property object", "e1@{ animate: true }"],
+    ["a node run in with &", "A@{ shape: cyl } & B --> C"],
+  ])("skips a shape object with %s", (_name, line) => {
+    const chart = parseFlowchart(`flowchart LR\n  ${line}`);
+    expect(chart?.skipped).toEqual([line]);
+    expect(chart?.nodes).toEqual([]);
+    expect(chart?.edges).toEqual([]);
+  });
+
+  it("skips a multi-line shape object line by line, never half-reading it", () => {
+    const chart = parseFlowchart('flowchart LR\n  A@{\n    shape: cyl\n    label: "x"\n  }\n  A --> B');
+    expect(chart?.skipped).toEqual(["A@{", "shape: cyl", 'label: "x"', "}"]);
+    expect(chart?.nodes.map((node) => node.id)).toEqual(["A", "B"]);
   });
 });
