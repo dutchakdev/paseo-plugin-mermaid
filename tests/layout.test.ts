@@ -227,6 +227,13 @@ describe("the shapes added for Mermaid coverage", () => {
     }
   });
 
+  it("insets a single-line slanted node by 7.5 px", () => {
+    // One line is 17 px tall plus 2 * 10 padding: 37 px, so the slant is round(14.8) = 15 and half of it 7.5.
+    const box = measureNode({ id: "A", label: "x", shape: "lean-right" });
+    expect(box.height).toBe(37);
+    expect(sideInset({ id: "A", label: "x", shape: "lean-right", layer: 0, x: 0, y: 0, ...box })).toBe(7.5);
+  });
+
   it("meets the slanted side across", () => {
     const layout = layoutFlowchart(chart("flowchart LR\n A[/in/] --> B[\\top/]"));
     const [a, b] = ["A", "B"].map((id) => layout.nodes.find((node) => node.id === id)!);
@@ -252,6 +259,46 @@ describe("the shapes added for Mermaid coverage", () => {
     const [a, b] = ["A", "B"].map((id) => layout.nodes.find((node) => node.id === id)!);
     expect(layout.edges[0].segments[0].x).toBe(a.x + a.width);
     expect(layout.edges[0].arrowAt?.x).toBe(b.x);
+  });
+});
+
+describe("lane edges and slanted sides", () => {
+  // A reaches D past B and C, so the edge takes a lane. A leans and D is a trapezoid, so both ends are inset.
+  const layout = layoutFlowchart(chart("flowchart LR\n A[/in/] --> B --> C --> D[\\top/]\n A --> D"));
+  const node = (id: string) => layout.nodes.find((candidate) => candidate.id === id)!;
+  const lane = layout.edges.find((edge) => edge.from === "A" && edge.to === "D")!;
+
+  it("takes a lane, so these tests cover the lane route", () => {
+    expect(lane.segments).toHaveLength(5);
+  });
+
+  it("leaves a slanted node at its side, not its box edge", () => {
+    const a = node("A");
+    expect(a.shape).toBe("lean-right");
+    expect(lane.segments[0].x).toBeCloseTo(a.x + a.width - sideInset(a));
+  });
+
+  it("ends at the slanted side of the target and puts the arrow there", () => {
+    const d = node("D");
+    expect(d.shape).toBe("trapezoid-top");
+    const last = lane.segments[4];
+    expect(last.x + last.width).toBeCloseTo(d.x + sideInset(d));
+    expect(lane.arrowAt?.x).toBeCloseTo(d.x + sideInset(d));
+    expect(lane.arrowAt?.direction).toBe("right");
+  });
+
+  it("still keeps clear of the nodes it skips", () => {
+    for (const segment of lane.segments) {
+      for (const id of ["B", "C"]) {
+        const box = node(id);
+        const overlaps =
+          segment.x < box.x + box.width &&
+          segment.x + segment.width > box.x &&
+          segment.y < box.y + box.height &&
+          segment.y + segment.height > box.y;
+        expect(overlaps, `A->D crosses ${id}`).toBe(false);
+      }
+    }
   });
 });
 

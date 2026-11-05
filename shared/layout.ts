@@ -64,6 +64,9 @@ const TAPERED: ReadonlySet<NodeShape> = new Set(["trapezoid", "trapezoid-top"]);
  * horizontal edge meets it. A parallelogram or trapezoid slants by `slantFor`,
  * so at half the height the side has moved half that; every other shape either
  * fills its box there or, like a hexagon, reaches it with a point.
+ *
+ * Relies on `measureNode` keeping these shapes at their base height: the slant
+ * is taken from the laid-out height, so a taller box would shift the contact.
  */
 export function sideInset(node: LaidOutNode): number {
   return LEANING.has(node.shape) || TAPERED.has(node.shape) ? slantFor(node.height) / 2 : 0;
@@ -334,12 +337,14 @@ function routeThroughLane(
   lane: number,
 ): LaidOutEdge {
   if (across) {
-    const startX = from.x + from.width;
-    const endX = to.x;
+    // The lane's verticals stay clear of the boxes, measured from the box edges as
+    // before; only the stubs into and out of a node reach in to a slanted side.
+    const outX = from.x + from.width + LANE_GAP / 2;
+    const inX = to.x - LANE_GAP / 2;
+    const startX = from.x + from.width - sideInset(from);
+    const endX = to.x + sideInset(to);
     const startY = from.y + from.height / 2;
     const endY = to.y + to.height / 2;
-    const outX = startX + LANE_GAP / 2;
-    const inX = endX - LANE_GAP / 2;
 
     return {
       ...edge,
