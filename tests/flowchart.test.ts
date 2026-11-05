@@ -136,8 +136,9 @@ describe("parseNodeExpression shape objects", () => {
 
   it("lets a quoted label hold the characters that would end an unquoted one", () => {
     expect(parseNodeExpression('A@{ shape: hex, label: "x, y: z } w" }')?.label).toBe("x, y: z } w");
-    expect(parseNodeExpression("A@{ shape: hex, label: 'a, b: {c}' }")?.label).toBe("a, b: {c}");
+    expect(parseNodeExpression('A@{ shape: hex, label: "a, b: {c}" }')?.label).toBe("a, b: {c}");
     expect(parseNodeExpression('A@{ shape: hex, label: "a --> b" }')?.label).toBe("a --> b");
+    expect(parseNodeExpression("A@{ shape: hex, label: 'a, b: {c' }")?.label).toBe("a, b: {c");
   });
 
   it("turns <br/> into a line break and reads a node id with dots and dashes", () => {
@@ -173,6 +174,11 @@ describe("parseNodeExpression shape objects", () => {
     ["a missing value", "A@{ shape: }"],
     ["a key without a colon", "A@{ shape cyl }"],
     ["no space after the colon", "A@{ shape:cyl }"],
+    // Mermaid's lexer only treats `"` as a string: in a single-quoted value a `}` ends the object and a `"` opens a string that never closes.
+    ["a } inside single quotes", "A@{ shape: hex, label: 'a, b: {c}' }"],
+    ["a lone } inside single quotes", "A@{ shape: hex, label: 'a } b' }"],
+    ["a double quote inside single quotes", "A@{ shape: hex, label: 'say \"hi\"' }"],
+    ["a lone double quote inside single quotes", "A@{ shape: hex, label: 'a \" b' }"],
     ["an escaped quote", 'A@{ shape: cyl, label: "say \\"hi\\"" }'],
     ["a Markdown string label", 'A@{ shape: cyl, label: "`**bold**`" }'],
     ["an unquoted label with a bracket", "A@{ shape: cyl, label: a[0] }"],
@@ -354,19 +360,6 @@ describe("parseFlowchart", () => {
     expect(chart?.nodes.find((node) => node.id === "A")).toEqual({ id: "A", label: "Orders", shape: "cylinder" });
   });
 
-  it("lets a shape object with no label change the shape of a node already drawn", () => {
-    const bare = parseFlowchart("flowchart TD\n  A --> B\n  A@{ shape: db }");
-    expect(bare?.nodes.find((node) => node.id === "A")).toEqual({ id: "A", label: "A", shape: "cylinder" });
-
-    const labelled = parseFlowchart("flowchart TD\n  A[Orders] --> B\n  A@{ shape: db }");
-    expect(labelled?.nodes.find((node) => node.id === "A")).toEqual({ id: "A", label: "Orders", shape: "cylinder" });
-  });
-
-  it("keeps the shape of a node when a later edge mentions it by id", () => {
-    const chart = parseFlowchart("flowchart TD\n  A@{ shape: db }\n  B --> A");
-    expect(chart?.nodes.find((node) => node.id === "A")?.shape).toBe("cylinder");
-  });
-
   it.each([
     ["img", 'A@{ shape: cyl, img: "https://x.test/a.png", label: "x" } --> B'],
     ["icon", 'A@{ icon: "fa:user", form: "square", label: "x" } --> B'],
@@ -388,9 +381,89 @@ describe("parseFlowchart", () => {
     expect(chart?.edges).toEqual([]);
   });
 
+  it("reads a shape object followed by a %% comment, which is cut like any other", () => {
+    const chart = parseFlowchart("flowchart LR\n  A@{ shape: cyl } --> B %% the database");
+    expect(chart?.nodes.map((node) => [node.id, node.shape])).toEqual([
+      ["A", "cylinder"],
+      ["B", "rect"],
+    ]);
+    expect(chart?.skipped).toEqual([]);
+  });
+
+  it("skips a shape object whose quoted label holds %%, which the comment cut leaves unclosed", () => {
+    const line = 'A@{ shape: cyl, label: "50%% off" } --> B';
+    const chart = parseFlowchart(`flowchart LR\n  ${line}`);
+    expect(chart?.skipped).toEqual([line]);
+    expect(chart?.nodes).toEqual([]);
+  });
+
+  it("skips a shape object followed by a :::class shorthand, which the plugin does not apply", () => {
+    for (const line of ["A@{ shape: cyl }:::hot", "A@{ shape: cyl }:::hot --> B", "A --> B@{ shape: hex }:::hot"]) {
+      const chart = parseFlowchart(`flowchart LR\n  ${line}`);
+      expect(chart?.skipped, line).toEqual([line]);
+      expect(chart?.nodes, line).toEqual([]);
+    }
+  });
+
   it("skips a multi-line shape object line by line, never half-reading it", () => {
     const chart = parseFlowchart('flowchart LR\n  A@{\n    shape: cyl\n    label: "x"\n  }\n  A --> B');
     expect(chart?.skipped).toEqual(["A@{", "shape: cyl", 'label: "x"', "}"]);
     expect(chart?.nodes.map((node) => node.id)).toEqual(["A", "B"]);
+  });
+});
+
+describe("parseFlowchart redefining a node", () => {
+  /** Mermaid keeps the last shape and the last label a node was given; a bare mention gives neither. */
+  const node = (lines: string[], id = "A") =>
+    parseFlowchart(`flowchart TD\n  ${lines.join("\n  ")}`)?.nodes.find((candidate) => candidate.id === id);
+
+  it("takes a later shape and label over an earlier bracket definition", () => {
+    expect(node(["A[Orders] --> B", 'A@{ shape: db, label: "Orders DB" }'])).toEqual({
+      id: "A",
+      label: "Orders DB",
+      shape: "cylinder",
+    });
+  });
+
+  it("takes a later shape over an earlier one, including the default rect", () => {
+    expect(node(["A@{ shape: db }", "A@{ shape: rect }"])).toEqual({ id: "A", label: "A", shape: "rect" });
+  });
+
+  it("takes a later bracket shape whose label is the id", () => {
+    expect(node(["A[x]", "A{A}"])).toEqual({ id: "A", label: "A", shape: "diamond" });
+    expect(node(["A --> B", "A((A))"])).toEqual({ id: "A", label: "A", shape: "circle" });
+  });
+
+  it("takes the later of two labels", () => {
+    expect(node(["A[x]", "A[y]"])).toEqual({ id: "A", label: "y", shape: "rect" });
+    expect(node(["A{x}", "A[y]"])).toEqual({ id: "A", label: "y", shape: "rect" });
+  });
+
+  it("keeps the label when a later shape object gives only a shape, and the shape when it gives only a label", () => {
+    expect(node(["A[Orders] --> B", "A@{ shape: db }"])).toEqual({ id: "A", label: "Orders", shape: "cylinder" });
+    expect(node(['A@{ shape: db, label: "Orders" }', "A@{ shape: hex }"])).toEqual({
+      id: "A",
+      label: "Orders",
+      shape: "hexagon",
+    });
+    expect(node(["A --> B", "A@{ shape: db }"])).toEqual({ id: "A", label: "A", shape: "cylinder" });
+  });
+
+  it("changes neither label nor shape on a bare later mention", () => {
+    expect(node(['A@{ shape: db, label: "Orders" }', "B --> A", "A --> C", "A"])).toEqual({
+      id: "A",
+      label: "Orders",
+      shape: "cylinder",
+    });
+    expect(node(["A{Pick}", "B --> A"])).toEqual({ id: "A", label: "Pick", shape: "diamond" });
+  });
+
+  it("applies mentions in the order they are written, inside one chain too", () => {
+    expect(node(["A[first] --> B --> A[second]"])).toEqual({ id: "A", label: "second", shape: "rect" });
+  });
+
+  it("keeps a node where it first appeared", () => {
+    const chart = parseFlowchart("flowchart TD\n  A --> B\n  B --> C\n  A@{ shape: db }");
+    expect(chart?.nodes.map((candidate) => candidate.id)).toEqual(["A", "B", "C"]);
   });
 });

@@ -124,11 +124,14 @@ interface ShapeField {
 /**
  * Reads the `key: value, key: value }` that follows an `@{`, from `from`, and says where
  * the `}` ends. Keys are any word, so the span of an object this plugin will refuse
- * (`img`, `icon`, `pos`, ...) is still found whole. A quoted value may hold `,` `:` `{`
- * and `}`; an unquoted one runs to the next `,` or `}` and may hold none of the
- * characters YAML or Mermaid would read as more structure. Anything else, from a missing
- * space after the colon to a trailing comma, a backslash escape or an unclosed quote,
- * is null: an object read halfway would draw the rest of it as stray text.
+ * (`img`, `icon`, `pos`, ...) is still found whole. Mermaid's lexer treats only `"` as
+ * opening a string: a double-quoted value may hold `,` `:` `{` and `}`, but in a
+ * single-quoted or an unquoted value a `}` ends the object and a `"` opens a string
+ * that never closes, so a single-quoted value holding either is null. An unquoted value
+ * runs to the next `,` or `}` and may hold none of the characters YAML or Mermaid would
+ * read as more structure. Anything else, from a missing space after the colon to a
+ * trailing comma, a backslash escape or an unclosed quote, is null: an object read
+ * halfway would draw the rest of it as stray text.
  */
 function scanShapeObject(text: string, from: number): { fields: ShapeField[]; end: number } | null {
   const fields: ShapeField[] = [];
@@ -155,6 +158,8 @@ function scanShapeObject(text: string, from: number): { fields: ShapeField[]; en
       value = text.slice(index + 1, close);
       // `\"` and `\n` mean something else in a double-quoted YAML string than they do here.
       if (quote === '"' && value.includes("\\")) return null;
+      // Mermaid ignores single quotes, so its object ends at a `}` here and a `"` starts a string.
+      if (quote === "'" && /[}"]/.test(value)) return null;
       quoted = true;
       index = close + 1;
     } else {
@@ -252,12 +257,25 @@ function labelOf(inner: string, close: string): string | null {
 }
 
 /**
+ * A node as one statement wrote it. A node is mentioned many times in a diagram and
+ * Mermaid keeps the last shape and the last label any mention gave, so what the text
+ * actually said matters: a bare `A` gives neither, `A@{ shape: db }` gives only a shape.
+ */
+interface NodeMention {
+  node: FlowNode;
+  /** The text carried a label; otherwise `node.label` is just the id. */
+  labelled: boolean;
+  /** The text carried a shape; otherwise `node.shape` is just the default `rect`. */
+  shaped: boolean;
+}
+
+/**
  * Reads `id@{ shape: cyl, label: "Orders" }`, where `at` is the index of the `@{`. Only the
  * `shape` and `label` keys, each once, and a shape name the plugin draws, are read; the
  * object has to be the whole of the text. Anything else (another key, an unknown shape,
  * a node run in after it with `&`) is null, so the line counts as skipped.
  */
-function parseShapeObject(text: string, at: number, id: string): FlowNode | null {
+function parseShapeObject(text: string, at: number, id: string): NodeMention | null {
   const object = scanShapeObject(text, at + 2);
   if (!object || text.slice(object.end).trim().length > 0) return null;
 
@@ -275,11 +293,15 @@ function parseShapeObject(text: string, at: number, id: string): FlowNode | null
   const labelField = values.get("label");
   if (labelField?.quoted && isMarkdownString(labelField.value)) return null;
   const label = labelField ? breakLines(labelField.value) : "";
-  return { id, label: label.length > 0 ? label : id, shape };
+  return { node: { id, label: label.length > 0 ? label : id, shape }, labelled: label.length > 0, shaped: true };
 }
 
 /** Reads `id`, `id[Label]`, `id{Decision}`, `id((Circle))`, `id@{ shape: cyl }` and friends. */
 export function parseNodeExpression(raw: string): FlowNode | null {
+  return readNodeMention(raw)?.node ?? null;
+}
+
+function readNodeMention(raw: string): NodeMention | null {
   const text = raw.trim();
   if (text.length === 0) return null;
 
@@ -299,11 +321,11 @@ export function parseNodeExpression(raw: string): FlowNode | null {
     // The longest opener that fits is the shape meant; a label it cannot read is final.
     const label = labelOf(text.slice(start + open.length, text.length - close.length), close);
     if (label === null) return null;
-    return { id, label: label.length > 0 ? label : id, shape };
+    return { node: { id, label: label.length > 0 ? label : id, shape }, labelled: label.length > 0, shaped: true };
   }
 
   if (!/^[\w.-]+$/.test(text)) return null;
-  return { id: text, label: text, shape: "rect" };
+  return { node: { id: text, label: text, shape: "rect" }, labelled: false, shaped: false };
 }
 
 interface Split {
@@ -349,6 +371,7 @@ export function splitChain(line: string): Split | null {
   return { parts, operators };
 }
 
+/** `line` with each readable `@{ ... }` overwritten by `_`, same length, so indexes still match the original and no operator can be found inside one. */
 function maskShapeObjects(line: string): string {
   let masked = line;
   for (const [start, end] of shapeObjectSpans(line)) {
@@ -364,15 +387,13 @@ export function parseFlowchart(source: string): Flowchart | null {
   const edges: FlowEdge[] = [];
   const skipped: string[] = [];
 
-  const remember = (node: FlowNode) => {
+  // Last wins, as in Mermaid: a mention that gives a label replaces the label, one that gives a shape replaces the shape, and a bare id changes neither.
+  const remember = ({ node, labelled, shaped }: NodeMention) => {
     const existing = nodes.get(node.id);
-    if (!existing || (existing.label === existing.id && node.label !== node.id)) {
-      // A later definition carrying a real label wins over a bare id mention.
-      nodes.set(node.id, node);
-    } else if (node.label === node.id && node.shape !== "rect") {
-      // `A --> B` then `A@{ shape: db }`: a shape with no label of its own changes the shape and keeps the label.
-      nodes.set(node.id, { ...existing, shape: node.shape });
-    }
+    nodes.set(
+      node.id,
+      existing ? { id: node.id, label: labelled ? node.label : existing.label, shape: shaped ? node.shape : existing.shape } : node,
+    );
   };
 
   for (const original of lines) {
@@ -406,24 +427,24 @@ export function parseFlowchart(source: string): Flowchart | null {
 
     const chain = splitChain(normalizeEdgeLabels(line));
     if (!chain) {
-      const single = parseNodeExpression(line.replace(/;$/, ""));
+      const single = readNodeMention(line.replace(/;$/, ""));
       if (single) remember(single);
       else skipped.push(original.trim());
       continue;
     }
 
-    const parsed = chain.parts.map((part) => parseNodeExpression(part.replace(/;$/, "")));
-    if (parsed.some((node) => node === null)) {
+    const parsed = chain.parts.map((part) => readNodeMention(part.replace(/;$/, "")));
+    if (parsed.some((mention) => mention === null)) {
       skipped.push(original.trim());
       continue;
     }
 
-    for (const node of parsed) remember(node as FlowNode);
+    for (const mention of parsed) remember(mention as NodeMention);
     for (let index = 0; index < chain.operators.length; index += 1) {
       const operator = chain.operators[index];
       edges.push({
-        from: (parsed[index] as FlowNode).id,
-        to: (parsed[index + 1] as FlowNode).id,
+        from: (parsed[index] as NodeMention).node.id,
+        to: (parsed[index + 1] as NodeMention).node.id,
         label: operator.label,
         style: operator.style,
         arrow: operator.arrow,
