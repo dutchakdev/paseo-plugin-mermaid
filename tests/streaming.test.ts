@@ -64,6 +64,7 @@ describe("streaming through Paseo's Markdown, what Mermaid is given", () => {
     items.filter((item) => item.kind === DIAGRAM_KIND || /^`{3,}mermaid\n/.test(textOf(item)));
   /** The source inside a fenced item. */
   const fenced = (item: PluginTimelineItem) => textOf(item).replace(/^`+mermaid\n/, "").replace(/\n`+$/, "");
+  const dedupe = <T,>(values: T[]) => values.filter((value, index) => index === 0 || JSON.stringify(value) !== JSON.stringify(values[index - 1]));
 
   it("is only lines whose newline has arrived, while the fence is open", () => {
     // Paseo's Markdown draws each update as final, so a half-typed `B --` or `C[Lab` would flash the diagram to code.
@@ -75,6 +76,50 @@ describe("streaming through Paseo's Markdown, what Mermaid is given", () => {
         expect(prefix, "handed Mermaid a line still being typed").toContain(`${fenced(item).replace('D[("D")]', "D@{ shape: db }")}\n`);
       }
     }
+  });
+
+  it("with two diagrams, keeps the first inline and moves the second to Mermaid once", () => {
+    const first = "flowchart TD\n  A --> B";
+    const second = "flowchart LR\n  C --> D\n  subgraph S\n    E\n  end";
+    const message = `${fence(first)}\n\nand\n\n${fence(second)}`;
+    const secondFence = message.lastIndexOf("```mermaid");
+    const handedOverAt = message.indexOf("  subgraph S\n", secondFence) + "  subgraph S\n".length;
+    const kinds: string[][] = [[], []];
+    for (let end = message.indexOf("```mermaid") + "```mermaid".length; end <= message.length; end += 1) {
+      const prefix = message.slice(0, end);
+      const diagrams = diagramsOf(split(prefix, "streaming", host)?.items ?? []);
+      diagrams.forEach((item, index) => kinds[index].push(item.kind));
+      if (end > secondFence + "```mermaid".length) {
+        expect(diagrams).toHaveLength(2);
+        expect(diagrams[1].kind, prefix.slice(secondFence)).toBe(end >= handedOverAt ? TEXT_KIND : DIAGRAM_KIND);
+        if (diagrams[1].kind === TEXT_KIND) expect(prefix).toContain(`${fenced(diagrams[1])}\n`);
+      }
+    }
+    expect(dedupe(kinds[0])).toEqual([DIAGRAM_KIND]);
+    expect(dedupe(kinds[1])).toEqual([DIAGRAM_KIND, TEXT_KIND]);
+  });
+
+  it("with a link definition arriving after the diagram went to Mermaid, moves it into the whole message and never back inline", () => {
+    const diagram = "flowchart LR\n  A --> B\n  subgraph S\n    C\n  end";
+    const message = `See [the docs][d].\n\n${fence(diagram)}\n\nAfter.\n\n[d]: https://example.com`;
+    const states: string[] = [];
+    let wentToMermaid = false;
+    for (let end = 1; end <= message.length; end += 1) {
+      const prefix = message.slice(0, end);
+      const items = split(prefix, "streaming", host)?.items;
+      states.push(items === undefined ? "Paseo" : items.map((item) => (item.kind === DIAGRAM_KIND ? "inline" : diagramsOf([item]).length > 0 ? "Mermaid" : "text")).join(" "));
+      if (items?.some((item) => item.kind === TEXT_KIND && textOf(item).includes("```mermaid"))) wentToMermaid = true;
+      if (wentToMermaid) expect(items?.some((item) => item.kind === DIAGRAM_KIND), prefix.slice(-30)).toBe(false);
+    }
+    expect(dedupe(states)).toEqual([
+      "Paseo", // prose only, until the fence opens
+      "text inline", // the diagram is drawn while it can be
+      "text Mermaid", // its subgraph line has finished
+      "text Mermaid text", // the prose after it
+      "text", // `[d]:` arrived: the whole message, diagram and all, goes to Paseo's Markdown in one item
+    ]);
+    const last = split(message, "streaming", host)?.items ?? [];
+    expect(last).toEqual([{ type: "plugin", kind: TEXT_KIND, version: 1, data: { text: message } }]);
   });
 });
 
