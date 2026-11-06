@@ -36,9 +36,8 @@ Paseo draws Mermaid itself too, in an iframe inside a zoomable box with a
 fullscreen viewer, and it draws every diagram type. This plugin draws flowcharts
 and sequence diagrams inline instead: readable at the width of the message, from
 the first streamed line, with the same controls above it for the times the fitted
-drawing is not enough: zoom, fit to view, pop out, and the source on demand. Every
-diagram it cannot draw in full still renders, through Mermaid; see
-[What it draws](#what-it-draws).
+drawing is not enough: zoom, fit to view, pop out, and the source on demand. A
+diagram it cannot draw in full goes to Mermaid; see [What it draws](#what-it-draws).
 
 ## Install
 
@@ -94,10 +93,10 @@ paseo plugin install "$PWD"
 
 A node given twice takes the last label and shape, as in Mermaid.
 
-Everything else is rendered by Mermaid: other diagram types, subgraphs, other
-shape names and keys in `@{ }`, Markdown string labels, `style` and `classDef`
-lines, `&` and `;` joining nodes or statements on one line, sequence blocks such
-as `loop` and `alt`, `%%{init}%%` directives, and front matter. On Android,
+Everything else goes to Mermaid: other diagram types, subgraphs, Markdown string
+labels, `style` and `classDef` lines, `&` and `;` joining nodes or statements on
+one line, sequence blocks such as `loop` and `alt`, `%%{init}%%` directives, front
+matter, and shape objects with another shape name or key. On Android,
 React Native cannot skew a View, so a diagram with a parallelogram or a trapezoid
 goes to Mermaid there too. Where Mermaid runs depends on your Paseo:
 
@@ -110,6 +109,13 @@ A message that defines reference-style links or footnotes is kept whole on 0.13
 and newer and rendered by Paseo's Markdown, which also draws its diagrams. On
 0.11 and 0.12 it is left to Paseo: split around the diagram, a definition in one
 piece would not reach the link in another.
+
+Paseo's renderer refuses any source holding `@{`. So before a diagram reaches it,
+in a message, a kept-whole message or the `.mmd` tab, the plugin writes each shape
+object it reads in bracket syntax: `A@{ shape: db, label: "Orders" }` becomes
+`A[("Orders")]`. An object it does not read stays as written, and Paseo shows that
+diagram as code: another shape name such as `cloud`, another key such as `img` or
+`icon`, an object over several lines, a label containing `"`.
 
 When the plugin renders a message, the text around the diagram goes through Paseo's
 own Markdown on Paseo 0.13 and newer, so it looks like the rest of the chat. On
@@ -166,9 +172,10 @@ flowchart TD
     Full -->|yes| Split
     Split --> Text(Prose)
     Split --> Src(Diagram source)
-    Text --> Md[Paseo Markdown]
+    Text --> Md[Paseo Markdown from 0.13]
     Src --> Own{Drawn in full?}
-    Own -->|no| Mer[Mermaid through Paseo's Markdown]
+    Own -->|no| Fix[Shape objects to brackets]
+    Fix --> Mer[Mermaid through Paseo's Markdown]
     Own -->|yes| Parse{Which parser?}
     Parse -->|flowchart| Layout[Layered layout]
     Parse -->|sequence| Columns[Column layout]
@@ -191,8 +198,9 @@ diagram, the plugin owns the message. It is split into prose and diagram
 segments, and each becomes its own item, so the text around the diagram keeps its
 place. From Paseo 0.13 that prose goes through Paseo's own Markdown component;
 before it, through a small renderer covering headings, lists, emphasis and code.
-A diagram the plugin cannot draw becomes a text item holding its source as a
-mermaid fence, which Paseo's Markdown renders with Mermaid (`shared/fence.ts`).
+On 0.13 and newer, a diagram the plugin cannot draw becomes a text item holding
+its source as a mermaid fence, which Paseo's Markdown renders with Mermaid
+(`shared/fence.ts`).
 Messages without a diagram are left alone entirely.
 
 **A diagram is drawn in full or not at all.** A drawing with lines missing would
@@ -250,7 +258,7 @@ the client entry with the installed daemon's compiler and loads it into a stand-
 | File | Role |
 | ---- | ---- |
 | `shared/segment.ts` | splits a message into prose and diagram blocks |
-| `shared/flowchart.ts` | flowchart parser |
+| `shared/flowchart.ts` | flowchart parser, and the bracket rewrite of shape objects for Paseo's renderer |
 | `shared/sequence.ts` | sequence diagram parser |
 | `shared/layout.ts` | layered layout, orthogonal edge routing, column layout |
 | `shared/markdown.ts` | the Markdown subset used for prose |
