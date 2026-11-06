@@ -20,16 +20,18 @@ export interface DrawableOptions {
 /**
  * Whether this plugin draws everything in a diagram.
  *
- * When it does not, the message is left to Paseo, whose own renderer runs Mermaid
- * and draws every diagram type, so a diagram is not shown with lines missing or as
- * bare source. The parsers decide, not a guess from the first word: a line either
- * parser reports as skipped is a line this plugin would not draw.
+ * When it does not, the diagram goes to Mermaid, which draws every diagram type, so
+ * a diagram is not shown with lines missing or as bare source: on Paseo 0.13 and
+ * newer through Paseo's Markdown inside the plugin's message, on 0.11 and 0.12 by
+ * leaving the whole message to Paseo. The parsers decide, not a guess from the
+ * first word: a line either parser reports as skipped is a line this plugin would
+ * not draw.
  *
  * `pending` is the line being typed while the diagram can still grow, and null once
  * it cannot. Only `finished` lines are judged while it grows, so a half-typed edge
- * never hands the message over and takes it back a moment later, and a diagram with
+ * never hands the diagram over and takes it back a moment later, and a diagram with
  * nothing to draw yet is kept. Finished lines never change, so for one diagram the
- * answer only ever moves from this plugin to Paseo, and the renderer swaps at most
+ * answer only ever moves from this plugin to Mermaid, and the renderer swaps at most
  * once. Without skew a slanted shape counts once any finished line has given it,
  * even if a later line gives that node another shape, for the same reason.
  */

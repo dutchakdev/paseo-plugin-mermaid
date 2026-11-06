@@ -95,7 +95,8 @@ function classicShapesInLine(line: string, labels: Map<string, string>): string 
     const bracket = bracketForm(id[1], object.fields, labels.get(id[1]));
     if (bracket === null) continue;
 
-    // The parser reads `A @{ ... }` as node A, so the spaces between them go with the object.
+    // Mermaid 11.16 refuses a space before `@{`; the parser is lenient and reads `A @{ ... }`
+    // as node A. The spaces go with the object, so the bracket form is one Mermaid accepts.
     result += line.slice(copied, piece.index - id[2].length) + bracket;
     copied = object.end;
   }

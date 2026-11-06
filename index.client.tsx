@@ -23,7 +23,9 @@ const hostMarkdownAvailable = hostMarkdown(ui) !== null;
  * Paseo runs transformers while building the render model, on every streaming
  * update as well as on the finished message, and memoizes by source item. The
  * transform is therefore pure and synchronous, and it claims a mermaid fence
- * the moment the fence opens so the drawing never swaps renderers mid-stream.
+ * the moment the fence opens, before Paseo draws it. While a diagram streams it
+ * changes renderer at most once, from this plugin's drawing to Mermaid, at the
+ * first finished line the plugin cannot draw.
  *
  * The item stores the Mermaid source rather than a parsed graph. Parsing happens
  * at render time, which keeps the stored data small and lets a later fix to the

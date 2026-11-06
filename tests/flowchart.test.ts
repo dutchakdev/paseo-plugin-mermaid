@@ -126,7 +126,7 @@ describe("parseNodeExpression shape objects", () => {
     });
   });
 
-  it("reads a spaced id like the bracket shapes do", () => {
+  it("reads a spaced id like the bracket shapes do, more leniently than Mermaid 11.16, which refuses the space", () => {
     expect(parseNodeExpression("A @{ shape: db }")).toMatchObject({ id: "A", shape: "cylinder" });
   });
 

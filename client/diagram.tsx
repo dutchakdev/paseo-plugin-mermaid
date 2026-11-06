@@ -75,7 +75,7 @@ export function Drawing({ parsed, theme }: { parsed: DrawableDiagram; theme: Plu
 
 /**
  * Source that names no diagram yet. The transform hands every diagram this plugin
- * cannot draw to Paseo, so what reaches here is a diagram still arriving, shown as
+ * cannot draw to Mermaid, so what reaches here is a diagram still arriving, shown as
  * it is typed until its header settles.
  */
 export function Arriving({ source, theme }: { source: string; theme: PluginTheme }) {

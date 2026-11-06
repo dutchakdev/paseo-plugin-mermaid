@@ -241,7 +241,7 @@ function isMarkdownString(inner: string): boolean {
 /**
  * The label inside a shape's brackets, or null when the brackets hold syntax this
  * plugin would draw wrong. Refusing it puts the line among the skipped ones, which
- * leaves the diagram to Paseo.
+ * sends the diagram to Mermaid (`drawable`).
  *
  * A quoted label may hold anything but its own quote and a Markdown string. Unquoted,
  * a square bracket or the shape's own closing bracket means a second node run into

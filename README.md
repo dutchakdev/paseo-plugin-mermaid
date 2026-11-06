@@ -166,8 +166,11 @@ flowchart TD
     Msg([Message arrives]) --> Check{Has mermaid?}
     Check -->|no| Paseo[Paseo renders it]
     Check -->|yes| Host{Paseo 0.13 or newer?}
-    Host -->|yes| Split[[Split into segments]]
-    Host -->|no| Full{Every diagram drawn in full?}
+    Host -->|yes| Defs{Link definitions or footnotes?}
+    Defs -->|no| Split[[Split into segments]]
+    Defs -->|yes| Whole[Message kept whole]
+    Whole --> Fix
+    Host -->|no| Full{All drawn in full, no definitions?}
     Full -->|no| Paseo
     Full -->|yes| Split
     Split --> Text(Prose)

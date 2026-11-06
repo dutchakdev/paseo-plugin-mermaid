@@ -37,7 +37,7 @@ describe("classicShapes", () => {
     expect(classicShapes("A--oB@{ shape: db }")).toBe('A--oB[("B")]');
   });
 
-  it("closes the gap between an id and its object, as the parser reads a spaced id", () => {
+  it("closes the gap between an id and its object, which the parser leniently reads as one node and Mermaid refuses", () => {
     expect(classicShapes('A --> B  @{ shape: db, label: "x" }')).toBe('A --> B[("x")]');
   });
 

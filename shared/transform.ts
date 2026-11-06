@@ -91,7 +91,9 @@ export function split(
  * in list items and blockquotes and labels that span lines, so matching only
  * well-formed ones at a line start misses real ones. Splitting the message would put
  * a definition in a different Markdown document from its link; a false match, such
- * as `a[i]:` in code, only costs the plugin's drawing, since Paseo renders the message.
+ * as `a[i]:` in code, only costs the plugin's drawing: the message goes whole to
+ * Paseo's Markdown on 0.13 and newer, or to Paseo on 0.11 and 0.12, and Mermaid
+ * draws its diagrams either way.
  *
  * A scan rather than `/\[[^\]]+\]:/`: that regex backtracks quadratically on a long
  * run of `[`, and this runs in the app on every streaming update. Each `]:` looks
