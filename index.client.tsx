@@ -1,12 +1,17 @@
 import type { PluginClientContext } from "@getpaseo/plugin/client";
+import * as ui from "@getpaseo/plugin/client/ui";
 import { z } from "zod";
-import { addFilePanel } from "./client/compat";
+import { addFilePanel, hostMarkdown } from "./client/compat";
+import { canSkew } from "./client/diagram";
 import { MermaidFilePanel } from "./client/file-panel";
 import { DiagramItem, TextItem } from "./client/item";
 import { DIAGRAM_KIND, split, TEXT_KIND } from "./shared/transform";
 
 const textSchema = z.object({ text: z.string() });
 const diagramSchema = z.object({ source: z.string() });
+
+/** Apps from 0.13 have Paseo's Markdown, which draws the diagrams this plugin cannot. */
+const hostMarkdownAvailable = hostMarkdown(ui) !== null;
 
 /**
  * Renders Mermaid diagrams inside the transcript.
@@ -18,14 +23,20 @@ const diagramSchema = z.object({ source: z.string() });
  * Paseo runs transformers while building the render model, on every streaming
  * update as well as on the finished message, and memoizes by source item. The
  * transform is therefore pure and synchronous, and it claims a mermaid fence
- * the moment the fence opens so the drawing never swaps renderers mid-stream.
+ * the moment the fence opens, before Paseo draws it. While a diagram streams it
+ * changes renderer at most once, from this plugin's drawing to Mermaid, at the
+ * first finished line the plugin cannot draw.
  *
  * The item stores the Mermaid source rather than a parsed graph. Parsing happens
  * at render time, which keeps the stored data small and lets a later fix to the
  * parser improve diagrams that were sent months ago.
  *
- * A message with a diagram this plugin cannot draw in full is left to Paseo, whose
- * own renderer runs Mermaid; see `shared/drawable.ts`.
+ * What this plugin cannot draw in full (see `shared/drawable.ts`) goes to Paseo's
+ * Markdown, which runs Mermaid, as a mermaid fence inside the plugin's own text item,
+ * so a message with a diagram is never left to Paseo on 0.13 and later. Apps before
+ * 0.13 have no such Markdown; there such a message is left to Paseo whole. On
+ * Android, where React Native cannot shear a View, a diagram with a parallelogram
+ * or trapezoid counts as one this plugin does not draw (`canSkew`).
  *
  * Everything here runs in the app. The plugin has no server entry and starts no
  * daemon process.
@@ -36,12 +47,12 @@ export default function contribute(client: PluginClientContext) {
   client.addTimelineTransformer({
     id: "mermaid-assistant",
     query: { itemType: "assistant_message" },
-    transform: ({ item, phase }) => split(item.text, phase),
+    transform: ({ item, phase }) => split(item.text, phase, { hostMarkdown: hostMarkdownAvailable, skew: canSkew }),
   });
   client.addTimelineTransformer({
     id: "mermaid-user",
     query: { itemType: "user_message" },
-    transform: ({ item, phase }) => split(item.text, phase),
+    transform: ({ item, phase }) => split(item.text, phase, { hostMarkdown: hostMarkdownAvailable, skew: canSkew }),
   });
 
   client.addTimelineRenderer({

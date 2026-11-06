@@ -1,4 +1,4 @@
-import type { Direction, Flowchart, FlowEdge, FlowNode } from "./flowchart";
+import type { Direction, Flowchart, FlowEdge, FlowNode, NodeShape } from "./flowchart";
 import type { SeqEvent } from "./sequence";
 
 /**
@@ -48,6 +48,29 @@ const NODE_GAP = 22;
 const LINE = 1.5;
 /** Breadth reserved for each lane an edge that skips a layer runs through. */
 const LANE_GAP = 26;
+/** Height of one elliptical cap of a cylinder; the box reserves three of them (the lid's two arcs and the curved base). */
+export const CYLINDER_CAP = 6;
+/** Space between the two rings of a double circle. */
+export const DOUBLE_RING_GAP = 4;
+
+/** How far a parallelogram or trapezoid leans: two fifths of its height. */
+export const slantFor = (height: number): number => Math.round(height * 0.4);
+
+const LEANING: ReadonlySet<NodeShape> = new Set(["lean-right", "lean-left"]);
+const TAPERED: ReadonlySet<NodeShape> = new Set(["trapezoid", "trapezoid-top"]);
+
+/**
+ * How far the sides of a node sit inside its box at mid-height, where a
+ * horizontal edge meets it. A parallelogram or trapezoid slants by `slantFor`,
+ * so at half the height the side has moved half that; every other shape either
+ * fills its box there or, like a hexagon, reaches it with a point.
+ *
+ * Relies on `measureNode` keeping these shapes at their base height: the slant
+ * is taken from the laid-out height, so a taller box would shift the contact.
+ */
+export function sideInset(node: LaidOutNode): number {
+  return LEANING.has(node.shape) || TAPERED.has(node.shape) ? slantFor(node.height) / 2 : 0;
+}
 
 export function measureNode(node: FlowNode): { width: number; height: number } {
   const lines = node.label.split("\n");
@@ -65,6 +88,19 @@ export function measureNode(node: FlowNode): { width: number; height: number } {
     const side = Math.max(width, height);
     return { width: side, height: side };
   }
+  // The outer ring sits DOUBLE_RING_GAP outside the inner one, so the box grows by
+  // a gap on every side of the circle that holds the label.
+  if (node.shape === "double-circle") {
+    const side = Math.max(width, height) + 2 * DOUBLE_RING_GAP;
+    return { width: side, height: side };
+  }
+  // Room for the lid's two arcs and the curved base, so the label keeps its own height.
+  if (node.shape === "cylinder") return { width, height: height + 3 * CYLINDER_CAP };
+  // A hexagon's points reach out by half the height on both sides.
+  if (node.shape === "hexagon") return { width: width + height, height };
+  // The slant eats into the label's room, so the box widens to give it back.
+  if (LEANING.has(node.shape)) return { width: width + slantFor(height), height };
+  if (TAPERED.has(node.shape)) return { width: width + 2 * slantFor(height), height };
   return { width, height };
 }
 
@@ -249,8 +285,10 @@ function route(
 
   if (across) {
     const forward = to.x >= from.x;
-    const startX = forward ? from.x + from.width : from.x;
-    const endX = forward ? to.x : to.x + to.width;
+    // A slanted side is inset at mid-height, where the edge runs; starting at the
+    // box edge would leave a gap between the line and the shape.
+    const startX = forward ? from.x + from.width - sideInset(from) : from.x + sideInset(from);
+    const endX = forward ? to.x + sideInset(to) : to.x + to.width - sideInset(to);
     const startY = from.y + from.height / 2;
     const endY = to.y + to.height / 2;
     const midX = (startX + endX) / 2;
@@ -299,12 +337,14 @@ function routeThroughLane(
   lane: number,
 ): LaidOutEdge {
   if (across) {
-    const startX = from.x + from.width;
-    const endX = to.x;
+    // The lane's verticals stay clear of the boxes, measured from the box edges as
+    // before; only the stubs into and out of a node reach in to a slanted side.
+    const outX = from.x + from.width + LANE_GAP / 2;
+    const inX = to.x - LANE_GAP / 2;
+    const startX = from.x + from.width - sideInset(from);
+    const endX = to.x + sideInset(to);
     const startY = from.y + from.height / 2;
     const endY = to.y + to.height / 2;
-    const outX = startX + LANE_GAP / 2;
-    const inX = endX - LANE_GAP / 2;
 
     return {
       ...edge,

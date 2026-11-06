@@ -1,6 +1,12 @@
-Mermaid draws `mermaid` code blocks in agent and user messages as diagrams in the chat timeline, at the width of the message and from the first streamed line. It draws flowcharts and sequence diagrams. A message with any other diagram type, or with lines the plugin's parsers do not read, such as subgraphs, other node shapes, `style` and `classDef` lines, sequence blocks like `loop`, or `%%{init}%%` directives, is left to Paseo's own Mermaid renderer rather than drawn with parts missing.
+Mermaid draws `mermaid` code blocks in agent and user messages as diagrams in the chat timeline, at the width of the message and from the first streamed line. It draws flowcharts and sequence diagrams. Flowchart shapes include cylinders, hexagons, parallelograms, trapezoids and double circles, written in brackets or in the Mermaid 11 `@{ shape }` syntax.
 
-A message that contains a diagram the plugin draws is rendered by the plugin. On Paseo 0.13 and newer, the text around the diagram uses Paseo's own Markdown, so it looks like the rest of the chat. On Paseo 0.11 and 0.12 it uses a limited renderer (headings, lists, emphasis and code). Messages without a diagram are left to Paseo.
+Other diagrams go to Mermaid. On Paseo 0.13 and newer, a diagram the plugin does not draw in full (other diagram types, subgraphs, `style` and `classDef` lines, sequence blocks like `loop`, `%%{init}%%` directives) is rendered by Mermaid through Paseo's Markdown, inside the plugin's message, and the message's other diagrams stay inline. A message that defines reference-style links or footnotes is rendered whole by Paseo's Markdown. On Paseo 0.11 and 0.12, such messages are left to Paseo's own renderer. On Android, parallelograms and trapezoids go to Mermaid too, because React Native cannot skew a View there.
+
+Paseo's renderer refuses `@{`, so the plugin first writes the shape objects it reads in bracket syntax. An object it does not read, such as another shape name or a key like `img`, shows as code.
+
+On Paseo 0.13 and newer, the text around a diagram uses Paseo's own Markdown, so it looks like the rest of the chat. On Paseo 0.11 and 0.12 it uses a limited renderer (headings, lists, emphasis and code). Messages without a diagram are left to Paseo.
+
+With Better Paseo installed, turn off its "Plugin markdown for replies" setting, which is on by default. Paseo gives a reply to the first plugin that takes it, `better-paseo` comes first, and with that setting on it shows mermaid blocks as code before this plugin sees them.
 
 Each diagram has a toolbar to zoom, fit to view, pop out to a larger view, and show the code. Zoom matches Paseo's own diagram viewer: 100% is the drawing fitted to the row.
 

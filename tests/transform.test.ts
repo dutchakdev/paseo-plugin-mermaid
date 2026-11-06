@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { mermaidFence } from "../shared/fence";
 import { DIAGRAM_KIND, split, TEXT_KIND } from "../shared/transform";
 
 const DIAGRAM = "```mermaid\nflowchart TD\n  A --> B\n```";
@@ -95,5 +96,202 @@ describe("split", () => {
 
   it("stamps every item with a version", () => {
     for (const item of split(DIAGRAM, "complete")?.items ?? []) expect(item.version).toBe(1);
+  });
+});
+
+describe("split with Paseo's Markdown", () => {
+  const host = { hostMarkdown: true };
+  const SUBGRAPH = "flowchart TD\n  subgraph S\n    A --> B\n  end";
+
+  it("draws a pie chart through Mermaid instead of leaving the message", () => {
+    const result = split('Intro\n\n```mermaid\npie title Pets\n  "Dogs" : 3\n```', "complete", host);
+    expect(result?.items.map((item) => item.kind)).toEqual([TEXT_KIND, TEXT_KIND]);
+    expect(result?.items[1].data).toEqual({ text: mermaidFence('pie title Pets\n  "Dogs" : 3') });
+  });
+
+  it("keeps an inline diagram and a Mermaid one in message order", () => {
+    const result = split(`Before\n\n${DIAGRAM}\n\nBetween\n\n${mermaidFence(SUBGRAPH)}`, "complete", host);
+    expect(result?.items.map((item) => item.kind)).toEqual([TEXT_KIND, DIAGRAM_KIND, TEXT_KIND, TEXT_KIND]);
+    expect(result?.items[3].data).toEqual({ text: mermaidFence(SUBGRAPH) });
+  });
+
+  it("keeps a message with a link definition whole", () => {
+    // Each prose item is a Markdown document of its own, so Paseo's Markdown gets the message in one piece.
+    const text = `See [docs][d].\n\n${DIAGRAM}\n\n[d]: https://example.com`;
+    const result = split(text, "complete", host);
+    expect(result?.items.map((item) => item.kind)).toEqual([TEXT_KIND]);
+    expect(result?.items[0].data).toEqual({ text });
+  });
+
+  it("hands Mermaid only the finished lines of a diagram still streaming", () => {
+    // Paseo's Markdown draws each update as final, so a half-typed line would flash the diagram to code.
+    const head = `Intro\n\n${"```"}mermaid\n${SUBGRAPH}\n`;
+    for (const typed of ["  B --", "  C[Lab", "  C@{ shape: hex", "  "]) {
+      const items = split(head + typed, "streaming", host)?.items;
+      expect(items?.map((item) => item.kind), typed).toEqual([TEXT_KIND, TEXT_KIND]);
+      expect(items?.[1].data, typed).toEqual({ text: mermaidFence(SUBGRAPH) });
+    }
+  });
+
+  it("hands Mermaid every line of a diagram whose fence never closed once the message is complete", () => {
+    const items = split(`Intro\n\n${"```"}mermaid\n${SUBGRAPH}\n  C[Lab]`, "complete", host)?.items;
+    expect(items?.[1].data).toEqual({ text: mermaidFence(`${SUBGRAPH}\n  C[Lab]`) });
+  });
+
+  it("still leaves a message without a diagram alone", () => {
+    expect(split("plain", "complete", host)).toBeUndefined();
+  });
+
+  it("uses a fence longer than any backtick run", () => {
+    const source = 'flowchart TD\n  A["a ``` b"] --> B\n  subgraph S\n    C\n  end';
+    const result = split(`\`\`\`\`mermaid\n${source}\n\`\`\`\``, "complete", host);
+    const { text } = result?.items[0].data as { text: string };
+    expect(text.startsWith("````mermaid\n")).toBe(true);
+    expect(text.endsWith("\n````")).toBe(true);
+  });
+
+  it("behaves as before without Paseo's Markdown", () => {
+    const pie = 'Intro\n\n```mermaid\npie title Pets\n  "Dogs" : 3\n```';
+    expect(split(pie, "complete", { hostMarkdown: false })).toBeUndefined();
+    expect(split(pie, "complete")).toBeUndefined();
+  });
+});
+
+describe("split where the app cannot skew a View", () => {
+  const LEAN = "flowchart LR\n  A[/in/] --> B";
+  const CYLINDER = "flowchart LR\n  A[(db)] --> B{{prep}}";
+
+  it("hands a diagram with a slanted node to Paseo's Markdown as a mermaid fence", () => {
+    const result = split(`Intro\n\n${mermaidFence(LEAN)}`, "complete", { hostMarkdown: true, skew: false });
+    expect(result?.items.map((item) => item.kind)).toEqual([TEXT_KIND, TEXT_KIND]);
+    expect(result?.items[1].data).toEqual({ text: mermaidFence(LEAN) });
+  });
+
+  it("leaves the message to Paseo on apps without Paseo's Markdown", () => {
+    expect(split(`Intro\n\n${mermaidFence(LEAN)}`, "complete", { hostMarkdown: false, skew: false })).toBeUndefined();
+  });
+
+  it("still draws shapes that need no skew", () => {
+    const result = split(mermaidFence(CYLINDER), "complete", { hostMarkdown: true, skew: false });
+    expect(result?.items.map((item) => item.kind)).toEqual([DIAGRAM_KIND]);
+  });
+
+  it("draws the slanted diagram where the app can skew, as by default", () => {
+    expect(split(mermaidFence(LEAN), "complete", { hostMarkdown: true, skew: true })?.items[0].kind).toBe(DIAGRAM_KIND);
+    expect(split(mermaidFence(LEAN), "complete")?.items[0].kind).toBe(DIAGRAM_KIND);
+  });
+});
+
+describe("split handing Paseo a diagram with shape objects", () => {
+  const host = { hostMarkdown: true };
+  // The subgraph is why the plugin does not draw it; Paseo's Mermaid refuses any source with `@{`.
+  const OBJECTS = 'flowchart LR\n  A@{ shape: db, label: "Orders DB" } --> B\n  subgraph S\n    B --> C@{ shape: hex }\n  end';
+
+  it("writes the objects as bracket syntax in the fence", () => {
+    const result = split(`Intro\n\n${mermaidFence(OBJECTS)}`, "complete", host);
+    expect(result?.items.map((item) => item.kind)).toEqual([TEXT_KIND, TEXT_KIND]);
+    const { text } = result?.items[1].data as { text: string };
+    expect(text).toContain('A[("Orders DB")]');
+    expect(text).toContain('C{{"C"}}');
+    expect(text).not.toContain("@{");
+    expect(text).toBe(
+      mermaidFence('flowchart LR\n  A[("Orders DB")] --> B\n  subgraph S\n    B --> C{{"C"}}\n  end'),
+    );
+  });
+
+  it("leaves an object it cannot write as brackets in the fence", () => {
+    const source = 'flowchart LR\n  A@{ shape: cloud } --> B\n  subgraph S\n    B\n  end';
+    expect(split(mermaidFence(source), "complete", host)?.items[0].data).toEqual({ text: mermaidFence(source) });
+  });
+
+  it("still draws a diagram of shape objects inline from its own source", () => {
+    const source = 'flowchart LR\n  A@{ shape: db, label: "Orders DB" } --> B';
+    expect(split(mermaidFence(source), "complete", host)?.items).toEqual([
+      { type: "plugin", kind: DIAGRAM_KIND, version: 1, data: { source } },
+    ]);
+  });
+
+  it("rewrites the one that goes to Paseo and not the one drawn here", () => {
+    const drawn = "flowchart LR\n  A@{ shape: db } --> B";
+    const result = split(`${mermaidFence(drawn)}\n\n${mermaidFence(OBJECTS)}`, "complete", host);
+    expect(result?.items.map((item) => item.kind)).toEqual([DIAGRAM_KIND, TEXT_KIND]);
+    expect(result?.items[0].data).toEqual({ source: drawn });
+    expect((result?.items[1].data as { text: string }).text).not.toContain("@{");
+  });
+
+  it("writes the label an earlier mention gave to an object that gives none, and the id when none did", () => {
+    const source = "flowchart LR\n  A[Orders] --> B\n  A@{ shape: db } --> C@{ shape: hex }\n  subgraph S\n    C\n  end";
+    expect(split(mermaidFence(source), "complete", host)?.items[0].data).toEqual({
+      text: mermaidFence('flowchart LR\n  A[Orders] --> B\n  A[("Orders")] --> C{{"C"}}\n  subgraph S\n    C\n  end'),
+    });
+  });
+
+  it("hands a diagram Paseo cannot skew for this app over without objects too", () => {
+    const source = 'flowchart LR\n  A@{ shape: lean-r, label: "in" } --> B';
+    const result = split(mermaidFence(source), "complete", { hostMarkdown: true, skew: false });
+    expect(result?.items[0].kind).toBe(TEXT_KIND);
+    expect(result?.items[0].data).toEqual({ text: mermaidFence('flowchart LR\n  A[/"in"/] --> B') });
+  });
+});
+
+describe("split keeping a message whole for Paseo's Markdown, with shape objects", () => {
+  const host = { hostMarkdown: true };
+  const LINK = "[d]: https://example.com";
+  const message = (diagram: string) => `See [the docs][d] first.\n\n  ${"```"}mermaid \n${diagram}\n  ${"```"}  \n\nAfter *it*.\n\n${LINK}\n`;
+  const DRAWN = 'flowchart LR\n  A@{ shape: db, label: "Orders" } --> B';
+  const NOT_DRAWN = 'flowchart LR\n  A@{ shape: db, label: "Orders" } --> B\n  subgraph S\n    B --> C\n  end';
+
+  it.each([
+    ["a diagram the plugin draws", DRAWN],
+    ["a diagram the plugin does not draw", NOT_DRAWN],
+  ])("writes the objects in %s as brackets and changes nothing else", (_name, diagram) => {
+    const text = message(diagram);
+    const result = split(text, "complete", host);
+    expect(result?.items.map((item) => item.kind)).toEqual([TEXT_KIND]);
+    expect(result?.items[0].data).toEqual({ text: text.replace('A@{ shape: db, label: "Orders" }', 'A[("Orders")]') });
+    expect((result?.items[0].data as { text: string }).text).not.toContain("@{");
+  });
+
+  it("returns a whole message without shape objects byte for byte", () => {
+    const text = message("flowchart LR\n  A[(Orders)] --> B\n  subgraph S\n    B --> C\n  end");
+    expect(split(text, "complete", host)?.items[0].data).toEqual({ text });
+  });
+
+  it("rewrites every mermaid fence in the message and no other fence", () => {
+    const text = `${message(DRAWN)}\n${"```"}ts\nconst a = {};\nA@{ shape: db }\n${"```"}\n\n${"```"}mermaid\nflowchart TD\n  B@{ shape: hex }\n${"```"}`;
+    const { text: out } = split(text, "complete", host)?.items[0].data as { text: string };
+    expect(out).toBe(text.replace('A@{ shape: db, label: "Orders" }', 'A[("Orders")]').replace("B@{ shape: hex }", 'B{{"B"}}'));
+    expect(out).toContain("A@{ shape: db }");
+  });
+
+  it("leaves an object it cannot write as brackets where it is", () => {
+    const text = message("flowchart LR\n  A@{ shape: cloud } --> B");
+    expect(split(text, "complete", host)?.items[0].data).toEqual({ text });
+  });
+
+  it("hands over a fence that is still arriving only up to the line being typed", () => {
+    // Paseo's Markdown draws each update as final, so a half-typed line would flash the diagram to code.
+    const head = `See [the docs][d].\n\n${LINK}\n\n${"```"}mermaid\nflowchart LR\n`;
+    const streamed = (typed: string) => split(head + typed, "streaming", host)?.items;
+    expect(streamed('A@{ shape: db } --> B\n  C@{ shape: hex')).toEqual([
+      { type: "plugin", kind: TEXT_KIND, version: 1, data: { text: `${head}A[("A")] --> B\n` } },
+    ]);
+    expect(streamed('A@{ shape: db, label: "Or')?.[0].data).toEqual({ text: head });
+    expect(streamed("A --> B\n  C[Lab")?.[0].data).toEqual({ text: `${head}A --> B\n` });
+    expect(streamed("")?.[0].data).toEqual({ text: head });
+  });
+
+  it("keeps the last line of a fence that never closed once the message is complete", () => {
+    const text = `See [the docs][d].\n\n${LINK}\n\n${"```"}mermaid\nflowchart LR\n  A --> B\n  C@{ shape: hex }`;
+    expect(split(text, "complete", host)?.items[0].data).toEqual({ text: text.replace("C@{ shape: hex }", 'C{{"C"}}') });
+  });
+
+  it("writes the label an earlier mention gave to an object that gives none", () => {
+    const text = message("flowchart LR\n  A[Orders] --> B\n  A@{ shape: db }");
+    expect(split(text, "complete", host)?.items[0].data).toEqual({ text: text.replace("A@{ shape: db }", 'A[("Orders")]') });
+  });
+
+  it("does not write brackets for Paseo when the message is left to it, on apps without its Markdown", () => {
+    expect(split(message(DRAWN), "complete")).toBeUndefined();
   });
 });

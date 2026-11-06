@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- Flowchart node shapes: cylinder `[( )]`, hexagon `{{ }}`, parallelogram `[/ /]` and `[\ \]`, trapezoid `[/ \]` and `[\ /]`, and double circle `((( )))`. Diagrams with them are drawn inline instead of going to Paseo. On Android, where React Native cannot skew a View, a diagram with a parallelogram or a trapezoid is rendered by Mermaid.
+- Mermaid 11 shape objects, `id@{ shape: db, label: "Orders" }`, for the shape names that map to a shape the plugin draws (`cyl`, `hex`, `lean-r`, `trap-t`, `dbl-circ`, ...). An object with another key or shape name is not read.
+
+### Changed
+
+- On Paseo 0.13 and newer, a message with a mermaid block never leaves the plugin. A diagram the plugin does not draw in full is rendered by Mermaid through Paseo's Markdown, inside the plugin's message, and the message's other diagrams stay inline. A diagram that turns out to need Mermaid while it streams switches once. Paseo 0.11 and 0.12 keep leaving such messages to Paseo.
+- On Paseo 0.13 and newer, a message that defines reference-style links or footnotes is kept whole and rendered by Paseo's Markdown, which also draws its diagrams. It used to go to Paseo.
+- A diagram that goes to Mermaid has the shape objects the plugin reads written in bracket syntax first, `A@{ shape: db, label: "Orders" }` as `A[("Orders")]`, because Paseo's renderer refuses any source holding `@{`. That covers diagrams inside a message, messages kept whole for link definitions or footnotes, and the `.mmd` file tab. An object the plugin does not read (another shape name such as `cloud`, another key such as `img`, an object over several lines) stays as written and shows as code.
+- A node written more than once takes the last label and shape given, as in Mermaid. It used to keep the first label.
+- The README and the plugin directory listing say why diagrams show as code when Better Paseo's "Plugin markdown for replies" is on, and to turn it off.
+
 ## 0.4.3 - 2026-11-04
 
 ### Changed

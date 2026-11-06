@@ -13,7 +13,15 @@
 import { writeFileSync } from "node:fs";
 import { URL } from "node:url";
 import { parseFlowchart } from "../shared/flowchart";
-import { layoutFlowchart, layoutSequence, type LaidOutEdge, type LaidOutNode } from "../shared/layout";
+import {
+  CYLINDER_CAP,
+  DOUBLE_RING_GAP,
+  layoutFlowchart,
+  layoutSequence,
+  slantFor,
+  type LaidOutEdge,
+  type LaidOutNode,
+} from "../shared/layout";
 import { parseSequence } from "../shared/sequence";
 
 const INK = {
@@ -29,11 +37,13 @@ const INK = {
 };
 
 const FLOW = `flowchart LR
-    Msg([Message]) --> Check{Has mermaid?}
+    Log[(Timeline)] --> Msg([Message])
+    Msg --> Check{Has mermaid?}
     Check -->|no| Paseo[Paseo renders it]
     Check -->|yes| Split[[Split]]
-    Split --> Draw((Views))
-    Split -.->|unparsed| Raw[Show source]`;
+    Split --> Parse{{Parse}}
+    Parse --> Draw((Views))
+    Parse -.->|unparsed| Raw[Mermaid]`;
 
 const SEQ = `sequenceDiagram
     participant P as Plugin
@@ -72,6 +82,27 @@ function node(item: LaidOutNode): string {
     const cx = x + w / 2;
     const cy = y + h / 2;
     return `<rect x="${cx - side / 2}" y="${cy - side / 2}" width="${side}" height="${side}" ${fill} transform="rotate(45 ${cx} ${cy})"/>`;
+  }
+  const polygon = (points: [number, number][]) => `<polygon points="${points.map(([px, py]) => `${x + px},${y + py}`).join(" ")}" ${fill}/>`;
+  const s = slantFor(h);
+  switch (item.shape) {
+    case "cylinder": {
+      // Sides and the base arc as one open path, then the whole lid over its top.
+      const c = CYLINDER_CAP;
+      return `<path d="M ${x},${y + c} V ${y + h - c} A ${w / 2},${c} 0 0 0 ${x + w},${y + h - c} V ${y + c}" ${fill}/><ellipse cx="${x + w / 2}" cy="${y + c}" rx="${w / 2}" ry="${c}" ${fill}/>`;
+    }
+    case "hexagon":
+      return polygon([[0, h / 2], [h / 2, 0], [w - h / 2, 0], [w, h / 2], [w - h / 2, h], [h / 2, h]]);
+    case "lean-right":
+      return polygon([[s, 0], [w, 0], [w - s, h], [0, h]]);
+    case "lean-left":
+      return polygon([[0, 0], [w - s, 0], [w, h], [s, h]]);
+    case "trapezoid":
+      return polygon([[s, 0], [w - s, 0], [w, h], [0, h]]);
+    case "trapezoid-top":
+      return polygon([[0, 0], [w, 0], [w - s, h], [s, h]]);
+    case "double-circle":
+      return `<circle cx="${x + w / 2}" cy="${y + h / 2}" r="${w / 2}" ${fill}/><circle cx="${x + w / 2}" cy="${y + h / 2}" r="${w / 2 - DOUBLE_RING_GAP}" fill="none" stroke="${INK.accent}"/>`;
   }
   const r = item.shape === "circle" ? w / 2 : item.shape === "stadium" ? h / 2 : item.shape === "round" ? 12 : 4;
   const box = `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${r}" ${fill}/>`;
@@ -128,7 +159,9 @@ parts.push(
 
 parts.push(`<g transform="translate(${contentX}, ${flowY})">${flow.edges.map(edge).join("")}${flow.nodes.map((n) => {
   const lines = n.label.split("\n");
-  const startY = n.y + n.height / 2 - ((lines.length - 1) * 15) / 2 + 4;
+  // A cylinder's label sits below the lid, half a cap lower than the box centre.
+  const centreY = n.y + n.height / 2 + (n.shape === "cylinder" ? CYLINDER_CAP / 2 : 0);
+  const startY = centreY - ((lines.length - 1) * 15) / 2 + 4;
   return node(n) + lines.map((line, i) => text(n.x + n.width / 2, startY + i * 15, line, INK.text, 12, "400", "middle")).join("");
 }).join("")}</g>`);
 

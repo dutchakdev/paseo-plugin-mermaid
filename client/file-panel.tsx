@@ -3,6 +3,7 @@ import { Loading, Markdown } from "@getpaseo/plugin/client/ui";
 import React from "react";
 import { ScrollView, Text } from "react-native";
 import { fileView } from "../shared/file-view";
+import { canSkew } from "./diagram";
 import { DiagramViewer } from "./viewer";
 
 /**
@@ -21,7 +22,7 @@ export function MermaidFilePanel({ file, theme, layout }: PluginFilePanelProps) 
     return <Text style={{ color: theme.colors.statusDanger, padding }}>{text.error.message}</Text>;
   }
 
-  const view = fileView(text.text);
+  const view = fileView(text.text, { skew: canSkew });
   return (
     <ScrollView style={{ flex: 1, backgroundColor: theme.colors.surface0 }} contentContainerStyle={{ padding }}>
       {view.kind === "diagram" ? (

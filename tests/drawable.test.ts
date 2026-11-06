@@ -8,6 +8,7 @@ const fixture = (name: string) => readFileSync(join(__dirname, "fixtures", name)
 const LAUNCH_ORDER = fixture("launch-order.mmd"); // account-switcher docs/architecture.md
 const REQUEST_FLOW = fixture("request-flow.mmd"); // secure-input README
 const LAYERS = fixture("layers.mmd"); // machine-status README: subgraphs and `A & B` targets
+const VIBER_ARCHITECTURE = fixture("viber-architecture.mmd"); // 2026-11-04: cylinders and a hexagon
 
 describe("drawable, for a finished diagram", () => {
   it.each([
@@ -26,6 +27,12 @@ describe("drawable, for a finished diagram", () => {
     ["a directive at the end of a line", 'sequenceDiagram\n  A->>B: hi %%{init: {"sequence": {"showSequenceNumbers": true}}}%%', false],
   ])("%s", (_name, source, expected) => {
     expect(drawable(source, null)).toBe(expected);
+  });
+});
+
+describe("drawable, for the shapes the parser reads", () => {
+  it("draws the 2026-11-04 architecture diagram inline", () => {
+    expect(drawable(VIBER_ARCHITECTURE, null)).toBe(true);
   });
 });
 
@@ -63,5 +70,38 @@ describe("drawable, while the diagram is still growing", () => {
 
   it("hands over a finished header no parser accepts", () => {
     expect(drawable("flowchart-elk TD", "  A")).toBe(false);
+  });
+});
+
+describe("drawable, where the app cannot skew a View", () => {
+  // React Native on Android drops `skewX`, so a slanted node would be drawn as an upright box.
+  const noSkew = { skew: false };
+
+  it.each([
+    ["a parallelogram leaning right", "flowchart LR\n  A[/in/] --> B"],
+    ["a parallelogram leaning left", "flowchart LR\n  A[\\out\\] --> B"],
+    ["a trapezoid", "flowchart LR\n  A[/base\\] --> B"],
+    ["an upside-down trapezoid", "flowchart LR\n  A[\\top/] --> B"],
+    ["a Mermaid 11 shape object naming a slanted shape", "flowchart LR\n  A@{ shape: lean-r } --> B"],
+  ])("hands over %s", (_name, source) => {
+    expect(drawable(source, null, noSkew)).toBe(false);
+    expect(drawable(source, null)).toBe(true);
+  });
+
+  it("keeps the shapes it draws without skew: cylinders, hexagons, circles, diamonds", () => {
+    expect(drawable("flowchart TD\n  A[(db)] --> B{{prep}}\n  B --> C(((done)))\n  C --> D{ok?}", null, noSkew)).toBe(true);
+    expect(drawable(VIBER_ARCHITECTURE, null, noSkew)).toBe(true);
+  });
+
+  it("hands over while growing as soon as a finished line has a slanted node", () => {
+    expect(drawable("flowchart LR\n  A[/in/] --> B", "  B --> C", noSkew)).toBe(false);
+  });
+
+  it("does not judge a slanted node on the line still being typed", () => {
+    expect(drawable("flowchart LR\n  A --> B", "  B --> C[/out/]", noSkew)).toBe(true);
+  });
+
+  it("does not take a diagram back when a later line redefines the slanted node as a box", () => {
+    expect(drawable("flowchart LR\n  A[/in/] --> B\n  A[in]", null, noSkew)).toBe(false);
   });
 });

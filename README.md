@@ -29,14 +29,15 @@ Listed in the [Paseo plugin directory](https://paseo.sh/plugins/dutchakdev/merma
 - **A toolbar on every diagram:** zoom, fit to view, pop out, and the source on demand.
 - **`.mmd` files in the file tab** on Paseo 0.13 and newer, redrawn when the file changes.
 - **Nothing leaves the app.** The plugin has no server half, no settings and no network
-  access; it reads the message text it is given and draws it with React Native views.
+  access; it reads the message text it is given and draws it with React Native views
+  or passes it to Paseo's Markdown.
 
 Paseo draws Mermaid itself too, in an iframe inside a zoomable box with a
 fullscreen viewer, and it draws every diagram type. This plugin draws flowcharts
 and sequence diagrams inline instead: readable at the width of the message, from
 the first streamed line, with the same controls above it for the times the fitted
 drawing is not enough: zoom, fit to view, pop out, and the source on demand. A
-diagram it cannot draw in full stays with Paseo's renderer.
+diagram it cannot draw in full goes to Mermaid; see [What it draws](#what-it-draws).
 
 ## Install
 
@@ -83,23 +84,40 @@ paseo plugin install "$PWD"
 | Diagram | Supported |
 | ------- | --------- |
 | `flowchart` / `graph` | `TD`, `TB`, `BT`, `LR`, `RL` |
-| Node shapes | `[rect]`, `(round)`, `([stadium])`, `[[subroutine]]`, `{diamond}`, `((circle))`, `>asymmetric]` |
+| Node shapes | `[rect]`, `(round)`, `([stadium])`, `[[subroutine]]`, `[(cylinder)]`, `{diamond}`, `{{hexagon}}`, `((circle))`, `(((double circle)))`, `>asymmetric]`, `[/parallelogram/]`, `[\alt parallelogram\]`, `[/trapezoid\]`, `[\alt trapezoid/]` |
+| Shape objects | `id@{ shape: db, label: "Orders" }` for the names Mermaid 11 gives these shapes (`cyl`, `db`, `hex`, `lean-r`, `trap-t`, `dbl-circ`, ...) |
 | Edges | `-->`, `---`, `-.->`,  `-.-`, `==>`, `===` |
 | Edge labels | `-->|both|` and `-- forms -->` |
 | `sequenceDiagram` | participants, actors, notes, messages to oneself |
 | Message arrows | `->`, `->>`, `-->`, `-->>`, `-x`, `--x`, `-)`, `--)` |
 
-Everything else is left to Paseo, which renders it with Mermaid: other diagram
-types, subgraphs, other node shapes (cylinders, hexagons, parallelograms, double
-circles), Markdown string labels, `style` and `classDef` lines, `&` and `;` that
-join several nodes or statements on one line, sequence blocks such as `loop` and
-`alt`, `%%{init}%%` directives, and front matter. The plugin takes a message only
-when its parsers read every line of every diagram in it. A message whose text
-defines reference-style links or footnotes goes to Paseo as well: split into
-pieces around the diagram, a definition in one piece would not reach the link in
-another.
+A node given twice takes the last label and shape, as in Mermaid.
 
-When the plugin draws a message, the text around the diagram goes through Paseo's
+Everything else goes to Mermaid: other diagram types, subgraphs, Markdown string
+labels, `style` and `classDef` lines, `&` and `;` joining nodes or statements on
+one line, sequence blocks such as `loop` and `alt`, `%%{init}%%` directives, front
+matter, and shape objects with another shape name or key. On Android,
+React Native cannot skew a View, so a diagram with a parallelogram or a trapezoid
+goes to Mermaid there too. Where Mermaid runs depends on your Paseo:
+
+| Paseo | A diagram the plugin does not draw in full |
+| ----- | ------------------------------------------ |
+| 0.13 and newer | Stays in the plugin's message and renders through Paseo's Markdown, which uses Mermaid. Other diagrams in the message stay inline. |
+| 0.11 and 0.12 | Paseo has no such Markdown, so the whole message is left to Paseo's own renderer. |
+
+A message that defines reference-style links or footnotes is kept whole on 0.13
+and newer and rendered by Paseo's Markdown, which also draws its diagrams. On
+0.11 and 0.12 it is left to Paseo: split around the diagram, a definition in one
+piece would not reach the link in another.
+
+Paseo's renderer refuses any source holding `@{`. So before a diagram reaches it,
+in a message, a kept-whole message or the `.mmd` tab, the plugin writes each shape
+object it reads in bracket syntax: `A@{ shape: db, label: "Orders" }` becomes
+`A[("Orders")]`. An object it does not read stays as written, and Paseo shows that
+diagram as code: another shape name such as `cloud`, another key such as `img` or
+`icon`, an object over several lines, a label containing `"`.
+
+When the plugin renders a message, the text around the diagram goes through Paseo's
 own Markdown on Paseo 0.13 and newer, so it looks like the rest of the chat. On
 0.11 and 0.12 it goes through the plugin's renderer, which covers headings, lists,
 emphasis and code.
@@ -132,19 +150,36 @@ has the same toolbar as in the chat and redraws when the file changes on disk, s
 a diagram an agent is editing updates in place. A diagram the plugin does not draw
 in full is rendered in the same tab by Paseo's Markdown, which uses Mermaid.
 
+## With Better Paseo
+
+Paseo gives a reply to the first plugin, by plugin id, whose transformer takes it.
+`better-paseo` sorts before `mermaid`, and with its setting **Plugin markdown for
+replies** on, the default, it takes every assistant reply and shows mermaid fences
+as code. This plugin never sees those replies. Turn the setting off to get
+diagrams. Paseo declined to chain transformers
+([getpaseo/paseo#8785](https://github.com/getpaseo/paseo/issues/8785)).
+
 ## How it works
 
 ```mermaid
 flowchart TD
     Msg([Message arrives]) --> Check{Has mermaid?}
     Check -->|no| Paseo[Paseo renders it]
-    Check -->|yes| Full{Every diagram drawn in full?}
+    Check -->|yes| Host{Paseo 0.13 or newer?}
+    Host -->|yes| Defs{Link definitions or footnotes?}
+    Defs -->|no| Split[[Split into segments]]
+    Defs -->|yes| Whole[Message kept whole]
+    Whole --> Fix
+    Host -->|no| Full{All drawn in full, no definitions?}
     Full -->|no| Paseo
-    Full -->|yes| Split[[Split into segments]]
+    Full -->|yes| Split
     Split --> Text(Prose)
     Split --> Src(Diagram source)
     Text --> Md[Paseo Markdown from 0.13]
-    Src --> Parse{Which parser?}
+    Src --> Own{Drawn in full?}
+    Own -->|no| Fix[Shape objects to brackets]
+    Fix --> Mer[Mermaid through Paseo's Markdown]
+    Own -->|yes| Parse{Which parser?}
     Parse -->|flowchart| Layout[Layered layout]
     Parse -->|sequence| Columns[Column layout]
     Layout --> Draw((Views))
@@ -166,16 +201,19 @@ diagram, the plugin owns the message. It is split into prose and diagram
 segments, and each becomes its own item, so the text around the diagram keeps its
 place. From Paseo 0.13 that prose goes through Paseo's own Markdown component;
 before it, through a small renderer covering headings, lists, emphasis and code.
+On 0.13 and newer, a diagram the plugin cannot draw becomes a text item holding
+its source as a mermaid fence, which Paseo's Markdown renders with Mermaid
+(`shared/fence.ts`).
 Messages without a diagram are left alone entirely.
 
-**A diagram is drawn in full or not at all.** Paseo's renderer runs Mermaid and
-draws everything, so a drawing with lines missing would be worse than leaving the
-message to it. The parsers report every line they skip, and one skipped line in
-any diagram leaves the whole message to Paseo (`shared/drawable.ts`). That is
-decided from what the parsers read, not from the first word of the source, so the
-parsers refuse what they would draw wrong rather than accept it loosely: a label
-with a stray square bracket, a label wrapped whole in brackets that names another
-shape, a directive.
+**A diagram is drawn in full or not at all.** A drawing with lines missing would
+be worse than Mermaid's. The parsers report every line they skip, and one skipped
+line sends that diagram to Mermaid (`shared/drawable.ts`). That is decided from
+what the parsers read, not from the first word of the source, so the parsers
+refuse what they would draw wrong rather than accept it loosely: a label with a
+stray square bracket, a label wrapped whole in brackets that names another shape,
+a directive. Each diagram in a message is judged alone on 0.13 and newer. Before
+that, one such diagram leaves the whole message to Paseo.
 
 **Items store the source, not a parsed graph.** Parsing happens at render time.
 The stored data stays small, and a later fix to the parser improves diagrams that
@@ -188,8 +226,10 @@ diagram for the whole stream and then swap renderers at the last line. An
 unfinished block is therefore taken over at once and drawn from whatever has
 parsed so far. While the message streams and the fence is open, the last line
 counts only once its newline has arrived: until then it may be half typed.
-Finished lines never change, so a diagram that does need Paseo, say one that opens
-a subgraph, is handed over once, at the first line that shows it. A finished
+A diagram going to Mermaid gets only its finished lines too, since Paseo's
+Markdown draws every update as final and a half-typed line would show as code.
+Finished lines never change, so a diagram that does need Mermaid, say one that
+opens a subgraph, moves to it once, at the first line that shows it. A finished
 message is judged on every line, even when its fence never closed.
 
 **The drawing is fitted to the row.** A diagram's natural size is whatever its
@@ -212,9 +252,9 @@ The parsers, the layout, the zoom model and the transform are pure functions
 with no runtime dependencies, and that is where the tests are: bracket shapes,
 operator precedence (`-.->` must never read as `-.-` plus a stray `>`), cycles in
 a flowchart, node overlap, arrow direction, zoom steps that land back on 100%,
-which toolbar controls are live, which diagrams go to Paseo (checked on diagrams
+which toolbar controls are live, which diagrams go to Mermaid (checked on diagrams
 from this owner's own docs, in `tests/fixtures/`), that a message streamed one
-character at a time changes renderer at most once and only towards Paseo, and the
+character at a time changes renderer at most once and only towards Mermaid, and the
 JSON round trip Paseo performs on item data before rendering. The Views themselves are checked by
 `npm run typecheck` and by reloading the plugin. `npm run check:bundle` compiles
 the client entry with the installed daemon's compiler and loads it into a stand-in
@@ -224,11 +264,13 @@ the client entry with the installed daemon's compiler and loads it into a stand-
 | ---- | ---- |
 | `shared/segment.ts` | splits a message into prose and diagram blocks |
 | `shared/flowchart.ts` | flowchart parser |
+| `shared/classic-shapes.ts` | writes shape objects in bracket syntax for Paseo's renderer |
 | `shared/sequence.ts` | sequence diagram parser |
 | `shared/layout.ts` | layered layout, orthogonal edge routing, column layout |
 | `shared/markdown.ts` | the Markdown subset used for prose |
 | `shared/zoom.ts` | zoom steps, fit to view, and which controls are live |
-| `shared/drawable.ts` | whether the plugin draws a diagram in full, or leaves the message to Paseo |
+| `shared/drawable.ts` | whether the plugin draws a diagram in full, or hands it to Mermaid |
+| `shared/fence.ts` | wraps diagram source in a mermaid fence for Paseo's Markdown |
 | `shared/transform.ts` | the timeline transform itself |
 | `shared/file-view.ts` | what the file panel shows for a `.mmd` file |
 | `client/diagram.tsx` | drawing, in Views, at natural size |
