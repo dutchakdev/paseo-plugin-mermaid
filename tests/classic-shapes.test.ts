@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { classicShapes } from "../shared/classic-shapes";
-import { parseNodeExpression } from "../shared/flowchart";
+import { parseFlowchart, parseNodeExpression } from "../shared/flowchart";
 import { SHAPE_NAMES } from "./shape-names";
 
 describe("classicShapes", () => {
@@ -147,5 +147,69 @@ describe("classicShapes", () => {
   it("leaves no @{ in a diagram made only of readable objects", () => {
     const source = 'flowchart LR\n  A@{ shape: db, label: "Orders DB" } --> B@{ shape: hex }\n  B --> C@{ shape: lean-r, label: x }';
     expect(classicShapes(source)).not.toContain("@{");
+  });
+});
+
+describe("classicShapes keeping the label an earlier mention gave", () => {
+  // Mermaid keeps a node's label when a later object gives none, so the bracket form must carry it.
+  const lines = (...body: string[]) => ["flowchart LR", ...body.map((line) => `  ${line}`)].join("\n");
+
+  it("writes the label a bracket mention gave before the object", () => {
+    expect(classicShapes(lines("A[Orders] --> B", "A@{ shape: db }"))).toBe(lines("A[Orders] --> B", 'A[("Orders")]'));
+    expect(classicShapes(lines("A[Orders] --> B", 'A@{ shape: db, label: "" }'))).toBe(lines("A[Orders] --> B", 'A[("Orders")]'));
+  });
+
+  it("writes the id when the label only comes after the object, where that later mention gives it", () => {
+    expect(classicShapes(lines("A@{ shape: db } --> B", "A[Orders]"))).toBe(lines('A[("A")] --> B', "A[Orders]"));
+  });
+
+  it("writes the id when no mention gave a label", () => {
+    expect(classicShapes(lines("A --> B", "A@{ shape: db }"))).toBe(lines("A --> B", 'A[("A")]'));
+  });
+
+  it("takes the last label given, by a bracket or by an object", () => {
+    expect(classicShapes(lines("A[one] --> B", "A(two)", "A@{ shape: db }"))).toBe(lines("A[one] --> B", "A(two)", 'A[("two")]'));
+    expect(classicShapes(lines('A@{ shape: hex, label: "Orders" } --> B', "A@{ shape: db }"))).toBe(
+      lines('A{{"Orders"}} --> B', 'A[("Orders")]'),
+    );
+  });
+
+  it("keeps each node's label to itself", () => {
+    expect(classicShapes(lines("A[x] --> B[y]", "B@{ shape: db }"))).toBe(lines("A[x] --> B[y]", 'B[("y")]'));
+  });
+
+  it("counts a label given earlier on the same line", () => {
+    expect(classicShapes(lines("A[Orders] --> B --> A@{ shape: db }"))).toBe(lines('A[Orders] --> B --> A[("Orders")]'));
+  });
+
+  it("reads the node in front of an edge label written between the dashes", () => {
+    expect(classicShapes(lines("Q{Ready?} -- yes --> B", "Q@{ shape: hex }"))).toBe(lines("Q{Ready?} -- yes --> B", 'Q{{"Ready?"}}'));
+  });
+
+  it("reads a label on a line that runs nodes together with &", () => {
+    expect(classicShapes(lines("A[Orders] & B --> C", "A@{ shape: db }"))).toBe(lines("A[Orders] & B --> C", 'A[("Orders")]'));
+  });
+
+  it("writes an earlier label's line breaks back as <br/> for Mermaid", () => {
+    expect(classicShapes(lines("A[one<br/>two] --> B", "A@{ shape: db }"))).toBe(lines("A[one<br/>two] --> B", 'A[("one<br/>two")]'));
+  });
+
+  it("leaves the object as it came when the earlier label holds a double quote, which a bracket label cannot", () => {
+    const source = lines("A['say \"hi\"'] --> B", "A@{ shape: db }");
+    expect(classicShapes(source)).toBe(source);
+  });
+
+  it("does not take a label from a comment or from an edge label", () => {
+    expect(classicShapes(lines("B --> C %% A[Orders]", "A@{ shape: db }"))).toBe(lines("B --> C %% A[Orders]", 'A[("A")]'));
+    expect(classicShapes(lines("B -->|A[Orders]| C", "A@{ shape: db }"))).toBe(lines("B -->|A[Orders]| C", 'A[("A")]'));
+  });
+
+  it.each([
+    ["a bracket label before the object", lines("A[Orders] --> B", "A@{ shape: db }")],
+    ["an object's label before another object", lines('A@{ shape: hex, label: "Orders" } --> B', "A@{ shape: db }")],
+    ["a label after the object", lines("A@{ shape: db } --> B", "A[Orders]")],
+    ["no label at all", lines("A --> B", "A@{ shape: db }")],
+  ])("leaves the parser reading the same nodes after %s", (_name, source) => {
+    expect(parseFlowchart(classicShapes(source))?.nodes).toEqual(parseFlowchart(source)?.nodes);
   });
 });

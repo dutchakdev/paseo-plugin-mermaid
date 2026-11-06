@@ -267,7 +267,7 @@ function labelOf(inner: string, close: string): string | null {
  * Mermaid keeps the last shape and the last label any mention gave, so what the text
  * actually said matters: a bare `A` gives neither, `A@{ shape: db }` gives only a shape.
  */
-interface NodeMention {
+export interface NodeMention {
   node: FlowNode;
   /** The text carried a label; otherwise `node.label` is just the id. */
   labelled: boolean;
@@ -319,7 +319,7 @@ export function parseNodeExpression(raw: string): FlowNode | null {
   return readNodeMention(raw)?.node ?? null;
 }
 
-function readNodeMention(raw: string): NodeMention | null {
+export function readNodeMention(raw: string): NodeMention | null {
   const text = raw.trim();
   if (text.length === 0) return null;
 
@@ -398,6 +398,27 @@ function maskShapeObjects(line: string): string {
   return masked;
 }
 
+/**
+ * One statement as the parser reads it: its node mentions in the order written and the
+ * operators between them, or null when the parser skips the line. `line` is one line of
+ * a flowchart without its comment, and not a header, subgraph or styling line.
+ */
+export function readStatement(line: string): { mentions: NodeMention[]; operators: Split["operators"] } | null {
+  const chain = splitChain(normalizeEdgeLabels(line));
+  if (!chain) {
+    const single = readNodeMention(line.replace(/;$/, ""));
+    return single ? { mentions: [single], operators: [] } : null;
+  }
+
+  const mentions: NodeMention[] = [];
+  for (const part of chain.parts) {
+    const mention = readNodeMention(part.replace(/;$/, ""));
+    if (!mention) return null;
+    mentions.push(mention);
+  }
+  return { mentions, operators: chain.operators };
+}
+
 export function parseFlowchart(source: string): Flowchart | null {
   const lines = source.split("\n");
   let direction: Direction | null = null;
@@ -445,26 +466,19 @@ export function parseFlowchart(source: string): Flowchart | null {
       continue;
     }
 
-    const chain = splitChain(normalizeEdgeLabels(line));
-    if (!chain) {
-      const single = readNodeMention(line.replace(/;$/, ""));
-      if (single) remember(single);
-      else skipped.push(original.trim());
-      continue;
-    }
-
-    const parsed = chain.parts.map((part) => readNodeMention(part.replace(/;$/, "")));
-    if (parsed.some((mention) => mention === null)) {
+    const statement = readStatement(line);
+    if (!statement) {
       skipped.push(original.trim());
       continue;
     }
 
-    for (const mention of parsed) remember(mention as NodeMention);
-    for (let index = 0; index < chain.operators.length; index += 1) {
-      const operator = chain.operators[index];
+    const { mentions, operators } = statement;
+    for (const mention of mentions) remember(mention);
+    for (let index = 0; index < operators.length; index += 1) {
+      const operator = operators[index];
       edges.push({
-        from: (parsed[index] as NodeMention).node.id,
-        to: (parsed[index + 1] as NodeMention).node.id,
+        from: mentions[index].node.id,
+        to: mentions[index + 1].node.id,
         label: operator.label,
         style: operator.style,
         arrow: operator.arrow,

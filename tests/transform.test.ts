@@ -204,6 +204,13 @@ describe("split handing Paseo a diagram with shape objects", () => {
     expect((result?.items[1].data as { text: string }).text).not.toContain("@{");
   });
 
+  it("writes the label an earlier mention gave to an object that gives none, and the id when none did", () => {
+    const source = "flowchart LR\n  A[Orders] --> B\n  A@{ shape: db } --> C@{ shape: hex }\n  subgraph S\n    C\n  end";
+    expect(split(mermaidFence(source), "complete", host)?.items[0].data).toEqual({
+      text: mermaidFence('flowchart LR\n  A[Orders] --> B\n  A[("Orders")] --> C{{"C"}}\n  subgraph S\n    C\n  end'),
+    });
+  });
+
   it("hands a diagram Paseo cannot skew for this app over without objects too", () => {
     const source = 'flowchart LR\n  A@{ shape: lean-r, label: "in" } --> B';
     const result = split(mermaidFence(source), "complete", { hostMarkdown: true, skew: false });
@@ -255,6 +262,11 @@ describe("split keeping a message whole for Paseo's Markdown, with shape objects
     ]);
     expect(streamed('A@{ shape: db, label: "Or')?.[0].data).toEqual({ text: `${head}A@{ shape: db, label: "Or` });
     expect(streamed("")?.[0].data).toEqual({ text: head });
+  });
+
+  it("writes the label an earlier mention gave to an object that gives none", () => {
+    const text = message("flowchart LR\n  A[Orders] --> B\n  A@{ shape: db }");
+    expect(split(text, "complete", host)?.items[0].data).toEqual({ text: text.replace("A@{ shape: db }", 'A[("Orders")]') });
   });
 
   it("does not write brackets for Paseo when the message is left to it, on apps without its Markdown", () => {
