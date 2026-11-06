@@ -121,6 +121,16 @@ export function segmentMessage(text: string): Segment[] {
   return segments;
 }
 
+export interface MapOptions {
+  /**
+   * Whether the message can still grow. Then the last line of a mermaid fence that is still
+   * open is the line being typed, and it is left out: the message ends at the newline before
+   * it. Paseo's Markdown draws every update as if it were final, so a half-typed `B --`
+   * would turn the diagram to code until its newline arrived. False by default.
+   */
+  growing?: boolean;
+}
+
 /**
  * The message with the body of each mermaid fence, closed or still open, passed through
  * `rewrite`, and every other byte as it was: prose, other fences, the fence lines
@@ -128,7 +138,7 @@ export function segmentMessage(text: string): Segment[] {
  * so what it calls a mermaid fence is what the plugin draws. `rewrite` gets the body as
  * written, untrimmed, and an empty body is left alone.
  */
-export function mapMermaidSources(text: string, rewrite: (source: string) => string): string {
+export function mapMermaidSources(text: string, rewrite: (source: string) => string, options: MapOptions = {}): string {
   const lines: string[] = [];
   for (const block of fenceBlocks(text)) {
     if (block.kind === "lines") {
@@ -136,7 +146,13 @@ export function mapMermaidSources(text: string, rewrite: (source: string) => str
       continue;
     }
     lines.push(block.open);
-    lines.push(...(block.language === "mermaid" && block.body.length > 0 ? rewrite(block.body.join("\n")).split("\n") : block.body));
+    let body = block.body;
+    if (block.language === "mermaid") {
+      // An open fence is the end of the message, so its last line is the one being typed.
+      if (options.growing && block.close === null && body.length > 0) body = [...body.slice(0, -1), ""];
+      if (body.length > 0) body = rewrite(body.join("\n")).split("\n");
+    }
+    lines.push(...body);
     if (block.close !== null) lines.push(block.close);
   }
   return lines.join("\n");

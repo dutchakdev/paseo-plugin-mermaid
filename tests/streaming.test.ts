@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import type { PluginTimelineItem } from "@getpaseo/plugin";
 import { DIAGRAM_KIND, split, TEXT_KIND } from "../shared/transform";
 
 const fixture = (name: string) => readFileSync(join(__dirname, "fixtures", name), "utf8").trim();
@@ -52,6 +53,28 @@ describe("streaming a diagram through Paseo's Markdown", () => {
       expect(kind).toBe(end >= handedOverAt ? TEXT_KIND : DIAGRAM_KIND);
     }
     expect(switched).toBe(true);
+  });
+});
+
+describe("streaming through Paseo's Markdown, what Mermaid is given", () => {
+  const host = { hostMarkdown: true };
+  const textOf = (item: PluginTimelineItem) => (item.data as { text?: string }).text ?? "";
+  /** The diagrams among the items, in order: drawn ones, and the ones fenced for Mermaid. */
+  const diagramsOf = (items: PluginTimelineItem[]) =>
+    items.filter((item) => item.kind === DIAGRAM_KIND || /^`{3,}mermaid\n/.test(textOf(item)));
+  /** The source inside a fenced item. */
+  const fenced = (item: PluginTimelineItem) => textOf(item).replace(/^`+mermaid\n/, "").replace(/\n`+$/, "");
+
+  it("is only lines whose newline has arrived, while the fence is open", () => {
+    // Paseo's Markdown draws each update as final, so a half-typed `B --` or `C[Lab` would flash the diagram to code.
+    const message = fence("flowchart TD\n  subgraph S\n    A --> B\n    C[Label] --> D@{ shape: db }\n  end");
+    for (let end = message.indexOf("\n") + 1; end <= message.length; end += 1) {
+      const prefix = message.slice(0, end);
+      for (const item of diagramsOf(split(prefix, "streaming", host)?.items ?? [])) {
+        if (item.kind !== TEXT_KIND) continue;
+        expect(prefix, "handed Mermaid a line still being typed").toContain(`${fenced(item).replace('D[("D")]', "D@{ shape: db }")}\n`);
+      }
+    }
   });
 });
 

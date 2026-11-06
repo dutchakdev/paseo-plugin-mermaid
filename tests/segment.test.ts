@@ -93,6 +93,21 @@ describe("mapMermaidSources", () => {
     expect(mapMermaidSources("```mermaid\n", upper)).toBe("```mermaid\n");
   });
 
+  it("leaves out the line being typed of a mermaid fence still open while the message grows", () => {
+    const growing = { growing: true };
+    expect(mapMermaidSources("Here:\n\n```mermaid\nflowchart TD\n  a --", upper, growing)).toBe("Here:\n\n```mermaid\nFLOWCHART TD\n");
+    expect(mapMermaidSources("```mermaid\nflowchart TD\n  a --> b\n", upper, growing)).toBe("```mermaid\nFLOWCHART TD\n  A --> B\n");
+    expect(mapMermaidSources("```mermaid\nflow", upper, growing)).toBe("```mermaid\n");
+    expect(mapMermaidSources("```mermaid\n", upper, growing)).toBe("```mermaid\n");
+    expect(mapMermaidSources("```mermaid", upper, growing)).toBe("```mermaid");
+  });
+
+  it("keeps every line of a closed fence, and of a fence of another language, while the message grows", () => {
+    const growing = { growing: true };
+    expect(mapMermaidSources("```mermaid\na\n```\nb", upper, growing)).toBe("```mermaid\nA\n```\nb");
+    expect(mapMermaidSources("```mermaid\na\n```\n```ts\nconst a", upper, growing)).toBe("```mermaid\nA\n```\n```ts\nconst a");
+  });
+
   it("leaves an unterminated fence of another language as it is", () => {
     expect(mapMermaidSources("```ts\nconst a = 1;", upper)).toBe("```ts\nconst a = 1;");
   });

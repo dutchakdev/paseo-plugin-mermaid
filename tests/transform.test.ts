@@ -123,6 +123,21 @@ describe("split with Paseo's Markdown", () => {
     expect(result?.items[0].data).toEqual({ text });
   });
 
+  it("hands Mermaid only the finished lines of a diagram still streaming", () => {
+    // Paseo's Markdown draws each update as final, so a half-typed line would flash the diagram to code.
+    const head = `Intro\n\n${"```"}mermaid\n${SUBGRAPH}\n`;
+    for (const typed of ["  B --", "  C[Lab", "  C@{ shape: hex", "  "]) {
+      const items = split(head + typed, "streaming", host)?.items;
+      expect(items?.map((item) => item.kind), typed).toEqual([TEXT_KIND, TEXT_KIND]);
+      expect(items?.[1].data, typed).toEqual({ text: mermaidFence(SUBGRAPH) });
+    }
+  });
+
+  it("hands Mermaid every line of a diagram whose fence never closed once the message is complete", () => {
+    const items = split(`Intro\n\n${"```"}mermaid\n${SUBGRAPH}\n  C[Lab]`, "complete", host)?.items;
+    expect(items?.[1].data).toEqual({ text: mermaidFence(`${SUBGRAPH}\n  C[Lab]`) });
+  });
+
   it("still leaves a message without a diagram alone", () => {
     expect(split("plain", "complete", host)).toBeUndefined();
   });
@@ -254,14 +269,21 @@ describe("split keeping a message whole for Paseo's Markdown, with shape objects
     expect(split(text, "complete", host)?.items[0].data).toEqual({ text });
   });
 
-  it("rewrites a fence that is still arriving, up to the line being typed", () => {
+  it("hands over a fence that is still arriving only up to the line being typed", () => {
+    // Paseo's Markdown draws each update as final, so a half-typed line would flash the diagram to code.
     const head = `See [the docs][d].\n\n${LINK}\n\n${"```"}mermaid\nflowchart LR\n`;
     const streamed = (typed: string) => split(head + typed, "streaming", host)?.items;
     expect(streamed('A@{ shape: db } --> B\n  C@{ shape: hex')).toEqual([
-      { type: "plugin", kind: TEXT_KIND, version: 1, data: { text: `${head}A[("A")] --> B\n  C@{ shape: hex` } },
+      { type: "plugin", kind: TEXT_KIND, version: 1, data: { text: `${head}A[("A")] --> B\n` } },
     ]);
-    expect(streamed('A@{ shape: db, label: "Or')?.[0].data).toEqual({ text: `${head}A@{ shape: db, label: "Or` });
+    expect(streamed('A@{ shape: db, label: "Or')?.[0].data).toEqual({ text: head });
+    expect(streamed("A --> B\n  C[Lab")?.[0].data).toEqual({ text: `${head}A --> B\n` });
     expect(streamed("")?.[0].data).toEqual({ text: head });
+  });
+
+  it("keeps the last line of a fence that never closed once the message is complete", () => {
+    const text = `See [the docs][d].\n\n${LINK}\n\n${"```"}mermaid\nflowchart LR\n  A --> B\n  C@{ shape: hex }`;
+    expect(split(text, "complete", host)?.items[0].data).toEqual({ text: text.replace("C@{ shape: hex }", 'C{{"C"}}') });
   });
 
   it("writes the label an earlier mention gave to an object that gives none", () => {

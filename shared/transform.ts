@@ -42,19 +42,20 @@ export function split(
   // While the message streams, an open fence can still grow; once it is complete,
   // every line is final, including the last line of a fence that never closed.
   const growing = phase === "streaming";
-  const drawn = (diagram: MermaidSegment) =>
-    growing && diagram.pending !== null
-      ? drawable(diagram.finished, diagram.pending, judge)
-      : drawable(diagram.source, null, judge);
+  const open = (diagram: MermaidSegment) => growing && diagram.pending !== null;
+  // The lines of a diagram that will not change: while it grows, those that have ended in a newline.
+  const final = (diagram: MermaidSegment) => (open(diagram) ? diagram.finished : diagram.source);
+  const drawn = (diagram: MermaidSegment) => drawable(final(diagram), open(diagram) ? diagram.pending : null, judge);
   // Reference links and footnotes resolve across the whole message; split, they would not.
   const defined = segments.some((segment) => segment.kind === "text" && hasDefinition(segment.text));
 
   if (hostMarkdown) {
     // Paseo's Markdown reads the message in one piece, so the definition finds its link
     // and it draws the message's diagrams itself, every one of them, so each is written
-    // the way its Mermaid accepts. Nothing but the mermaid fences' bodies changes.
+    // the way its Mermaid accepts. Nothing but the mermaid fences' bodies changes, and
+    // while the message streams, the line an open fence is still typing waits for its newline.
     if (defined) {
-      const whole = mapMermaidSources(text, classicShapes);
+      const whole = mapMermaidSources(text, classicShapes, { growing });
       return { items: [{ type: "plugin", kind: TEXT_KIND, version: 1, data: { text: whole } }] };
     }
   } else {
@@ -76,7 +77,9 @@ export function split(
       // Without Paseo's Markdown every diagram was judged drawable above.
       items.push({ type: "plugin", kind: DIAGRAM_KIND, version: 1, data: { source: segment.source } });
     } else {
-      items.push({ type: "plugin", kind: TEXT_KIND, version: 1, data: { text: mermaidFence(classicShapes(segment.source)) } });
+      // Only final lines: Paseo's Markdown draws every update as if it were the last, and a
+      // half-typed line would turn the diagram to code until its newline arrived.
+      items.push({ type: "plugin", kind: TEXT_KIND, version: 1, data: { text: mermaidFence(classicShapes(final(segment))) } });
     }
   }
   return { items };

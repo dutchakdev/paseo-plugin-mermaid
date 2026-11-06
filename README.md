@@ -223,6 +223,8 @@ diagram for the whole stream and then swap renderers at the last line. An
 unfinished block is therefore taken over at once and drawn from whatever has
 parsed so far. While the message streams and the fence is open, the last line
 counts only once its newline has arrived: until then it may be half typed.
+A diagram going to Mermaid gets only its finished lines too, since Paseo's
+Markdown draws every update as final and a half-typed line would show as code.
 Finished lines never change, so a diagram that does need Mermaid, say one that
 opens a subgraph, moves to it once, at the first line that shows it. A finished
 message is judged on every line, even when its fence never closed.
