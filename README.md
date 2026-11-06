@@ -258,7 +258,8 @@ the client entry with the installed daemon's compiler and loads it into a stand-
 | File | Role |
 | ---- | ---- |
 | `shared/segment.ts` | splits a message into prose and diagram blocks |
-| `shared/flowchart.ts` | flowchart parser, and the bracket rewrite of shape objects for Paseo's renderer |
+| `shared/flowchart.ts` | flowchart parser |
+| `shared/classic-shapes.ts` | writes shape objects in bracket syntax for Paseo's renderer |
 | `shared/sequence.ts` | sequence diagram parser |
 | `shared/layout.ts` | layered layout, orthogonal edge routing, column layout |
 | `shared/markdown.ts` | the Markdown subset used for prose |

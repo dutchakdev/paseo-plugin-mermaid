@@ -1,6 +1,6 @@
+import { classicShapes } from "./classic-shapes";
 import { type DrawableOptions, drawable } from "./drawable";
 import { mermaidFence } from "./fence";
-import { classicShapes } from "./flowchart";
 
 export type FileView = { kind: "empty" } | { kind: "diagram"; source: string } | { kind: "markdown"; markdown: string };
 

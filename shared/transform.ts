@@ -1,7 +1,7 @@
 import type { PluginTimelineItem } from "@getpaseo/plugin";
+import { classicShapes } from "./classic-shapes";
 import { drawable } from "./drawable";
 import { mermaidFence } from "./fence";
-import { classicShapes } from "./flowchart";
 import { mapMermaidSources, type Segment, segmentMessage } from "./segment";
 
 type MermaidSegment = Extract<Segment, { kind: "mermaid" }>;
