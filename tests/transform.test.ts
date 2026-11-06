@@ -211,3 +211,53 @@ describe("split handing Paseo a diagram with shape objects", () => {
     expect(result?.items[0].data).toEqual({ text: mermaidFence('flowchart LR\n  A[/"in"/] --> B') });
   });
 });
+
+describe("split keeping a message whole for Paseo's Markdown, with shape objects", () => {
+  const host = { hostMarkdown: true };
+  const LINK = "[d]: https://example.com";
+  const message = (diagram: string) => `See [the docs][d] first.\n\n  ${"```"}mermaid \n${diagram}\n  ${"```"}  \n\nAfter *it*.\n\n${LINK}\n`;
+  const DRAWN = 'flowchart LR\n  A@{ shape: db, label: "Orders" } --> B';
+  const NOT_DRAWN = 'flowchart LR\n  A@{ shape: db, label: "Orders" } --> B\n  subgraph S\n    B --> C\n  end';
+
+  it.each([
+    ["a diagram the plugin draws", DRAWN],
+    ["a diagram the plugin does not draw", NOT_DRAWN],
+  ])("writes the objects in %s as brackets and changes nothing else", (_name, diagram) => {
+    const text = message(diagram);
+    const result = split(text, "complete", host);
+    expect(result?.items.map((item) => item.kind)).toEqual([TEXT_KIND]);
+    expect(result?.items[0].data).toEqual({ text: text.replace('A@{ shape: db, label: "Orders" }', 'A[("Orders")]') });
+    expect((result?.items[0].data as { text: string }).text).not.toContain("@{");
+  });
+
+  it("returns a whole message without shape objects byte for byte", () => {
+    const text = message("flowchart LR\n  A[(Orders)] --> B\n  subgraph S\n    B --> C\n  end");
+    expect(split(text, "complete", host)?.items[0].data).toEqual({ text });
+  });
+
+  it("rewrites every mermaid fence in the message and no other fence", () => {
+    const text = `${message(DRAWN)}\n${"```"}ts\nconst a = {};\nA@{ shape: db }\n${"```"}\n\n${"```"}mermaid\nflowchart TD\n  B@{ shape: hex }\n${"```"}`;
+    const { text: out } = split(text, "complete", host)?.items[0].data as { text: string };
+    expect(out).toBe(text.replace('A@{ shape: db, label: "Orders" }', 'A[("Orders")]').replace("B@{ shape: hex }", 'B{{"B"}}'));
+    expect(out).toContain("A@{ shape: db }");
+  });
+
+  it("leaves an object it cannot write as brackets where it is", () => {
+    const text = message("flowchart LR\n  A@{ shape: cloud } --> B");
+    expect(split(text, "complete", host)?.items[0].data).toEqual({ text });
+  });
+
+  it("rewrites a fence that is still arriving, up to the line being typed", () => {
+    const head = `See [the docs][d].\n\n${LINK}\n\n${"```"}mermaid\nflowchart LR\n`;
+    const streamed = (typed: string) => split(head + typed, "streaming", host)?.items;
+    expect(streamed('A@{ shape: db } --> B\n  C@{ shape: hex')).toEqual([
+      { type: "plugin", kind: TEXT_KIND, version: 1, data: { text: `${head}A[("A")] --> B\n  C@{ shape: hex` } },
+    ]);
+    expect(streamed('A@{ shape: db, label: "Or')?.[0].data).toEqual({ text: `${head}A@{ shape: db, label: "Or` });
+    expect(streamed("")?.[0].data).toEqual({ text: head });
+  });
+
+  it("does not write brackets for Paseo when the message is left to it, on apps without its Markdown", () => {
+    expect(split(message(DRAWN), "complete")).toBeUndefined();
+  });
+});

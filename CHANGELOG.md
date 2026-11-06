@@ -11,7 +11,6 @@
 
 - On Paseo 0.13 and newer, a message with a mermaid block never leaves the plugin. A diagram the plugin does not draw in full is rendered by Mermaid through Paseo's Markdown, inside the plugin's message, and the message's other diagrams stay inline. A diagram that turns out to need Mermaid while it streams switches once. Paseo 0.11 and 0.12 keep leaving such messages to Paseo.
 - On Paseo 0.13 and newer, a message that defines reference-style links or footnotes is kept whole and rendered by Paseo's Markdown, which also draws its diagrams. It used to go to Paseo.
-- A diagram handed to Mermaid has the shape objects the plugin reads, `A@{ shape: db, label: "Orders" }`, written as bracket syntax, `A[("Orders")]`, because Paseo's Mermaid refuses any source with `@{`. An object the plugin does not read stays as written and shows as code.
 - A node written more than once takes the last label and shape given, as in Mermaid. It used to keep the first label.
 - The README and the plugin directory listing say why diagrams show as code when Better Paseo's "Plugin markdown for replies" is on, and to turn it off.
 

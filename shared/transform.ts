@@ -2,7 +2,7 @@ import type { PluginTimelineItem } from "@getpaseo/plugin";
 import { drawable } from "./drawable";
 import { mermaidFence } from "./fence";
 import { classicShapes } from "./flowchart";
-import { type Segment, segmentMessage } from "./segment";
+import { mapMermaidSources, type Segment, segmentMessage } from "./segment";
 
 type MermaidSegment = Extract<Segment, { kind: "mermaid" }>;
 
@@ -51,8 +51,12 @@ export function split(
 
   if (hostMarkdown) {
     // Paseo's Markdown reads the message in one piece, so the definition finds its link
-    // and it draws the message's diagrams itself.
-    if (defined) return { items: [{ type: "plugin", kind: TEXT_KIND, version: 1, data: { text } }] };
+    // and it draws the message's diagrams itself, every one of them, so each is written
+    // the way its Mermaid accepts. Nothing but the mermaid fences' bodies changes.
+    if (defined) {
+      const whole = mapMermaidSources(text, classicShapes);
+      return { items: [{ type: "plugin", kind: TEXT_KIND, version: 1, data: { text: whole } }] };
+    }
   } else {
     // One diagram the plugin cannot draw in full leaves the whole message to Paseo,
     // which draws every diagram in it with Mermaid itself.
