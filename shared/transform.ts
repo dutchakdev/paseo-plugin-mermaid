@@ -2,7 +2,7 @@ import type { PluginTimelineItem } from "@getpaseo/plugin";
 import { classicShapes } from "./classic-shapes";
 import { drawable } from "./drawable";
 import { mermaidFence } from "./fence";
-import { mapMermaidSources, type Segment, segmentMessage } from "./segment";
+import { fenceBlocks, mapMermaidSources, type Segment, segmentMessage } from "./segment";
 
 type MermaidSegment = Extract<Segment, { kind: "mermaid" }>;
 
@@ -34,6 +34,12 @@ export function split(
 ): { items: PluginTimelineItem[] } | undefined {
   const hostMarkdown = options.hostMarkdown ?? false;
   const judge = { skew: options.skew ?? true };
+  // A ```ui/```app fence belongs to a live-UI renderer (genui). Paseo offers the
+  // message to transformers first-wins in plugin-name order and mermaid sorts
+  // before genui, so claiming a reply that carries one would show the widgets
+  // as code. Leave the whole message to the chain; genui draws the mermaid
+  // fences inside its Diagram components itself.
+  if (fenceBlocks(text).some((block) => block.kind === "fence" && (block.language === "ui" || block.language === "app"))) return undefined;
   const segments = segmentMessage(text);
   // Leave the entry alone unless there is a diagram to draw: Paseo renders
   // ordinary Markdown better than this plugin does.

@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- A reply that carries a ```ui or ```app fence is left to the generative-UI plugin that renders it (genui). Paseo offers a message to chat transformers first-wins in plugin-name order, and mermaid sorts before genui, so a reply with both a diagram and a ui fence used to be claimed here and its widgets showed as code. A plain diagram reply is unchanged.
+
 ## 0.5.0 - 2026-11-06
 
 ### Added

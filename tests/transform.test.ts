@@ -295,3 +295,35 @@ describe("split keeping a message whole for Paseo's Markdown, with shape objects
     expect(split(message(DRAWN), "complete")).toBeUndefined();
   });
 });
+
+describe("generative-UI replies", () => {
+  const UI = '```ui\nCard("Status", [Metric("Entities", "68")])\n```';
+
+  it("leaves a reply with a ui fence to the live-UI renderer", () => {
+    // Paseo offers a message to transformers first-wins in plugin-name order and
+    // mermaid sorts before genui: claiming the reply would show the widgets as code.
+    expect(split(UI, "complete")).toBeUndefined();
+    expect(split(UI, "complete", { hostMarkdown: true })).toBeUndefined();
+    expect(split(`Here is the status.\n\n${UI}`, "streaming")).toBeUndefined();
+  });
+
+  it("leaves a mixed reply whole, even when every diagram in it is drawable", () => {
+    // genui draws the mermaid fences inside its Diagram components itself.
+    expect(split(`${DIAGRAM}\n\n${UI}`, "complete")).toBeUndefined();
+    expect(split(`${DIAGRAM}\n\n${UI}`, "complete", { hostMarkdown: true })).toBeUndefined();
+  });
+
+  it("leaves an app fence alone too", () => {
+    expect(split("```app\n<b>hi</b>\n```", "complete")).toBeUndefined();
+  });
+
+  it("still claims a plain diagram reply", () => {
+    expect(split(DIAGRAM, "complete")?.items).toHaveLength(1);
+  });
+
+  it("does not hand over a ui fence quoted inside another language's block", () => {
+    const quoted = "````markdown\n```ui\nCard()\n```\n````";
+    expect(split(quoted, "complete")).toBeUndefined();
+    expect(split(`${quoted}\n\n${DIAGRAM}`, "complete")?.items.some((item) => item.kind === DIAGRAM_KIND)).toBe(true);
+  });
+});
