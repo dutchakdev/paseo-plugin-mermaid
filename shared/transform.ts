@@ -17,6 +17,7 @@ export interface SplitOptions {
    * own text item. Off by default, which leaves such a message to Paseo.
    */
   hostMarkdown?: boolean;
+  deferToGenerativeUi?: boolean;
   /** Whether the app can shear a View; see `DrawableOptions`. True by default. */
   skew?: boolean;
 }
@@ -39,7 +40,9 @@ export function split(
   // before genui, so claiming a reply that carries one would show the widgets
   // as code. Leave the whole message to the chain; genui draws the mermaid
   // fences inside its Diagram components itself.
-  if (fenceBlocks(text).some((block) => block.kind === "fence" && (block.language === "ui" || block.language === "app"))) return undefined;
+  if (hostMarkdown && options.deferToGenerativeUi && fenceBlocks(text).some(
+    (block) => block.kind === "fence" && (block.language === "ui" || block.language === "app"),
+  )) return undefined;
   const segments = segmentMessage(text);
   // Leave the entry alone unless there is a diagram to draw: Paseo renders
   // ordinary Markdown better than this plugin does.

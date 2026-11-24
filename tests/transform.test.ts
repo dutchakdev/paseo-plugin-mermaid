@@ -297,6 +297,7 @@ describe("split keeping a message whole for Paseo's Markdown, with shape objects
 });
 
 describe("generative-UI replies", () => {
+  const ASSISTANT = { hostMarkdown: true, deferToGenerativeUi: true };
   const UI = '```ui\nCard("Status", [Metric("Entities", "68")])\n```';
 
   it("leaves a reply with a ui fence to the live-UI renderer", () => {
@@ -309,12 +310,17 @@ describe("generative-UI replies", () => {
 
   it("leaves a mixed reply whole, even when every diagram in it is drawable", () => {
     // genui draws the mermaid fences inside its Diagram components itself.
-    expect(split(`${DIAGRAM}\n\n${UI}`, "complete")).toBeUndefined();
-    expect(split(`${DIAGRAM}\n\n${UI}`, "complete", { hostMarkdown: true })).toBeUndefined();
+    expect(split(`${DIAGRAM}\n\n${UI}`, "complete", ASSISTANT)).toBeUndefined();
+  });
+
+  it("preserves mixed diagrams in user messages and older clients", () => {
+    const mixed = `${DIAGRAM}\n\n${UI}`;
+    expect(split(mixed, "complete", { hostMarkdown: true })?.items.some((item) => item.kind === DIAGRAM_KIND)).toBe(true);
+    expect(split(mixed, "complete", { deferToGenerativeUi: true })?.items.some((item) => item.kind === DIAGRAM_KIND)).toBe(true);
   });
 
   it("leaves an app fence alone too", () => {
-    expect(split("```app\n<b>hi</b>\n```", "complete")).toBeUndefined();
+    expect(split(`${DIAGRAM}\n\n` + "```app\n<b>hi</b>\n```", "complete", ASSISTANT)).toBeUndefined();
   });
 
   it("still claims a plain diagram reply", () => {
@@ -324,6 +330,6 @@ describe("generative-UI replies", () => {
   it("does not hand over a ui fence quoted inside another language's block", () => {
     const quoted = "````markdown\n```ui\nCard()\n```\n````";
     expect(split(quoted, "complete")).toBeUndefined();
-    expect(split(`${quoted}\n\n${DIAGRAM}`, "complete")?.items.some((item) => item.kind === DIAGRAM_KIND)).toBe(true);
+    expect(split(`${quoted}\n\n${DIAGRAM}`, "complete", ASSISTANT)?.items.some((item) => item.kind === DIAGRAM_KIND)).toBe(true);
   });
 });
