@@ -42,7 +42,7 @@ type Block =
  * marker gets that right. Every line lands in exactly one block, as written, so the
  * blocks put back together give the message.
  */
-function fenceBlocks(text: string): Block[] {
+export function fenceBlocks(text: string): Block[] {
   const blocks: Block[] = [];
   let lines: string[] = [];
   let fence: Extract<Block, { kind: "fence" }> | null = null;

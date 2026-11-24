@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- On clients with native Markdown, an assistant reply with a `ui` or `app` fence stays whole so GenUI can render it. When GenUI is absent, Paseo renders the Mermaid diagram and shows the other fence as code. User messages and older clients keep the existing Mermaid rendering.
+
 ## 0.5.0 - 2026-11-06
 
 ### Added

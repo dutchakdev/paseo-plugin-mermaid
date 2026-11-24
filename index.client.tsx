@@ -47,7 +47,7 @@ export default function contribute(client: PluginClientContext) {
   client.addTimelineTransformer({
     id: "mermaid-assistant",
     query: { itemType: "assistant_message" },
-    transform: ({ item, phase }) => split(item.text, phase, { hostMarkdown: hostMarkdownAvailable, skew: canSkew }),
+    transform: ({ item, phase }) => split(item.text, phase, { hostMarkdown: hostMarkdownAvailable, skew: canSkew, deferToGenerativeUi: true }),
   });
   client.addTimelineTransformer({
     id: "mermaid-user",
