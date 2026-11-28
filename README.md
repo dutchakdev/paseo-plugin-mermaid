@@ -68,6 +68,7 @@ refuse the manifest as well and need the release named in the install table; see
 The development SDK is pinned to 0.13.2 for its types; Paseo supplies the runtime
 modules. Paseo's Markdown component and file panels arrived in 0.13, so the plugin
 checks for them at runtime and works without them on 0.11 and 0.12.
+The tests also pass with the Paseo 0.18.1 SDK, and its daemon serves the client bundle.
 
 To work on it locally instead:
 

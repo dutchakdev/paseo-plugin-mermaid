@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.2 - 2026-11-28
+
+### Changed
+
+- Verified Mermaid with the Paseo 0.18 SDK and checked that its daemon serves the timeline and file panel bundle.
+
 ## 0.5.1 - 2026-11-24
 
 ### Fixed
